@@ -1,0 +1,3 @@
+Mon, Jan 13 2025, 08:40:05pm PST
+Upload logo.svg. Delete toggle-local-server.sh from original location in repo root.
+Just some loose changes I missed earlier.
