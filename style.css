@@ -73,3 +73,23 @@ section {
     background: linear-gradient(to bottom, springgreen, moccasin, tomato);
     background-clip: text;
 }
+
+.games-list > li {
+    border: 0.1em solid white;
+    border-radius: 5em;
+    padding: 5em 1em;
+    overflow: hidden;
+    position: relative;
+    text-shadow:
+        0 0 0.3em black,
+        0 0 0.3em black,
+        0 0 0.3em black,
+        0 0 0.3em black;
+}
+.games-list > li > img {
+    position: absolute;
+    left: 0;
+    bottom: -5em;
+    width: 100%;
+    z-index: -1;
+}
