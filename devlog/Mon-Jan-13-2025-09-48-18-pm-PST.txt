@@ -1,0 +1,3 @@
+Mon, Jan 13 2025, 09:48:18pm PST
+Change HTML to use new confidence-list class. I had done this before, but forgotten to include index.html in the commit.
+What it says in the title.
