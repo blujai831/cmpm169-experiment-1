@@ -10,10 +10,23 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Mon-Jan-13-2025-08-27-53-pm-PST">Mon, Jan 13 2025, 08:27:53pm PST&mdash;Overhaul index.html to personal tastes</a></li>
     <li><a href="#Mon-Jan-13-2025-06-54-58-pm-PST">Mon, Jan 13 2025, 06:54:58pm PST&mdash;In bin/commit.sh, try to ensure whole devlog entry is printed back before taking a screenshot</a></li>
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Mon-Jan-13-2025-08-27-53-pm-PST">
+    <h2>Mon, Jan 13 2025, 08:27:53pm PST&mdash;Overhaul index.html to personal tastes</h2>
+    <a href="Mon-Jan-13-2025-08-27-53-pm-PST.png"><img src="Mon-Jan-13-2025-08-27-53-pm-PST.png" alt="Overhaul index.html to personal tastes" /></a>
+    <p>I overhauled the website homepage to suit my personal tastes in webdev. I consulted the original the whole time, so I'd say this counts as imitation.</p>
+    <p>I don't like including JavaScript needlessly in a page, so I removed the script tag for now. I'm sure I can do something interesting with it later, and I'm sure that was the point of it being in there in the first place, so it will probably be back.</p>
+    <p>I filled out some of my personal details.</p>
+    <p>I made significant changes to the semantic structure of the page. Where possible, I prefer to make semantic use of elements rather than semantic use of id and class names. I realize it's not a popular opinion these days, and there's probably a good reason for that that I don't fully understand, but, well, as long as I don't understand it...</p>
+    <p>I decided to use only one stylesheet for the homepage. Rather than putting style rules that should *only* apply to the homepage in a separate stylesheet, I'll try as much as possible to avoid *having* style rules that should only apply to the homepage, and override exceptions in page-specific stylesheets for other pages. On further consideration, this is probably an inferior way of doing things than was setup to begin with, but I don't know, it's just more agreeable to my sensibilities. I just feel like the homepage stylesheet and the sitewide stylesheet should be one and the same.</p>
+    <p>I moved the nav into the header instead of having it off to the side. Personal preference.</p>
+    <p>To keep my devlog entries fairly discrete, I'm not yet overhauling the stylesheet. I'll do that next.</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Mon-Jan-13-2025-06-54-58-pm-PST">
     <h2>Mon, Jan 13 2025, 06:54:58pm PST&mdash;In bin/commit.sh, try to ensure whole devlog entry is printed back before taking a screenshot</h2>
     <a href="Mon-Jan-13-2025-06-54-58-pm-PST.png"><img src="Mon-Jan-13-2025-06-54-58-pm-PST.png" alt="In bin/commit.sh, try to ensure whole devlog entry is printed back before taking a screenshot" /></a>

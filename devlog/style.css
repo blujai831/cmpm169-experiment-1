@@ -1,0 +1,37 @@
+body {
+    background-color: black;
+    color: white;
+    font-family: monospace;
+    font-size: 11pt;
+}
+
+a {
+    font-weight: bold;
+    color: cornflowerblue;
+}
+a:hover {
+    text-decoration: none;
+}
+a:visited {
+    color: orchid;
+}
+a:active {
+    color: tomato;
+}
+a:hover img {
+    opacity: 75%;
+}
+
+#entries {
+    padding-left: 0;
+    list-style: none;
+}
+#entries li {
+    border: 0.1em solid gray;
+    border-radius: 1em;
+    padding: 0 1em;
+    margin: 1em 0;
+}
+#entries li img {
+    max-width: 100%;
+}

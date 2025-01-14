@@ -1,46 +1,172 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-	<!-- This title is used for tabs and bookmarks -->
-	<title>Portfolio of My Name</title>
-
-	<!-- Use UTF character set, a good idea with any webpage -->
-  <meta charset="UTF-8" />
-	<!-- Set viewport so page remains consistently scaled w narrow devices -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<!-- Include a sitewide CSS file for consistent styling across the site -->
-	<link rel="stylesheet" type="text/css" href="css/site.css">
-	<!-- Experiment-specifc CSS file for any special styling of this particular page -->
-	<link rel="stylesheet" type="text/css" href="css/homepage.css">
-	<!-- Link to javascript file - DEFER waits until all elements are rendered -->
-	<script type="text/javascript" src="./js/experiment.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <title>Portfolio of Jaime McCann</title>
 </head>
 <body>
-	<!-- Style this page by changing the CSS in ../css/site.css or css/experiment.css -->
-	<main id="content">
-        <h1>Portfolio of My Name</h1>
-		<section class="two-column">
-			<div class="minor-section">
-					<!-- Note that all filenames use lowercase and no spaces -->
-                    <div class="image-wrapper">
-                        <img class="cat-photo" src="./img/cute-grey-kitten.jpg">
-                    </div>
-					<h2>About Me</h2>
-					<p>Tell us about yourself. Add photos. Customize this. Go crazy.</p>
-			</div>
-            <div class="minor-section">
-                <h2>Links to Experiments</h2>
-                <ul>
-                    <li><a href="./experiment1/index.html">Experiment 1</a></li>
-                    <li><a href="./experiment2/index.html">Experiment 2</a></li>
-                    <li><a href="./experiment3/index.html">Experiment 3</a></li>
-                </ul>
-            </div>
-
-		</section>
-		<nav id="links">
-			<!-- Put links to experiments here. -->
-		</nav>
-	</main>
+<header>
+    <img id="logo" src="./img/logo.svg" alt="blujai831 logo" />
+    <h1>Portfolio of Jaime McCann</h1>
+    <nav><ul>
+        <li><a href="./experiment1">Experiment 1</a></li>
+        <li><a href="./experiment2">Experiment 2</a></li>
+        <li><a href="./experiment3">Experiment 3</a></li>
+        <li><a href="./devlog">Devlog</a></li>
+    </ul></nav>
+</header>
+<main>
+<section><h2>About me</h2>
+    <p>I'm a fifth-year gamedev major at UCSC. I've had some delays
+    getting here, so I'm older than your average student.</p>
+    <section><details><summary><h3>Skills and experience</h3></summary>
+        <p>In terms of roles in a gamedev project, here are my skills
+        in descending order of confidence:</p>
+        <ul><li>Coding&mdash;very high confidence</li>
+            <li>Creative writing&mdash;high confidence</li>
+            <li>Digital music composition&mdash;medium-high confidence</li>
+            <li>Rigging and 3D animation&mdash;medium confidence</li>
+            <li>Level design&mdash;medium confidence</li>
+            <li>3D modeling&mdash;medium-low confidence</li>
+            <li>Spriting and 2D animation&mdash;medium-low confidence</li>
+            <li>Non-musical sound design&mdash;low confidence</li>
+        </ul>
+        <p>I have the technical know-how to do all of these things.
+        The confidence ratings reflect only how <em>polished</em>
+        I feel my work winds up when I try to do them.</p>
+        <p>More general skills:</p>
+        <ul><li>Full-stack web development</li>
+            <li>Linux system administration</li>
+            <li>Bragging online</li>
+        </ul>
+        <p>Here are some of the software development tools I like to use:</p>
+        <ul><li><a href="https://godotengine.org">Godot 4</a></li>
+            <li><a href="https://www.nano-editor.org">nano</a>
+                (unironically)</li>
+            <li><a href="https://apps.kde.org/kwrite">Kwrite</a></li>
+            <li><a href="https://kate-editor.org">Kate</a></li>
+            <li><a href="https://notepad-plus-plus.org">Notepad++</a>,
+                if I have to use Windows</li>
+            <li><a href="https://git-scm.com">git</a></li>
+            <li><a href="https://forgejo.org">Forgejo</a></li>
+            <li><a href="https://radicle.xyz">Radicle</a></li>
+        </ul>
+        <p>Here are some of the media creation tools I like to use:</p>
+        <ul><li><a href="https://www.blender.org">Blender</a></li>
+            <li><a href="https://lmms.io">LMMS</a></li>
+            <li><a href="https://tenacityaudio.org">Tenacity</a> /
+                <a href="https://www.audacityteam.org">Audacity</a></li>
+            <li><a href="https://libresprite.github.io">Libresprite</a> /
+                <a href="https://www.aseprite.org">Aseprite</a></li>
+            <li><a href="https://www.gimp.org">GIMP</a></li>
+            <li><a href="https://inkscape.org">Inkscape</a></li>
+            <li><a href="https://krita.org">Krita</a></li>
+        </ul>
+        <p>Here are some tools I'm not necessarily crazy about,
+        but won't complain about, and have varying degrees
+        of familiarity with:</p>
+        <ul><li>GitHub</li>
+            <li>Unity</li>
+            <li>VSCode</li>
+            <li>GameMaker</li>
+            <li>Clickteam products</li>
+            <li>RPG Maker products</li>
+            <li>Anvil Studio</li>
+            <li>Phaser</li>
+            <li>Twine</li>
+            <li>Inform 7</li>
+        </ul>
+        <p>Here are some common tools that you'd expect me to be familiar with,
+        that I'm, like, super <em>not,</em> at <em>all:</em></p>
+        <ul><li>Godot 3</li>
+            <li>Unreal Engine</li>
+            <li>Source Engine</li>
+            <li>Photoshop</li>
+            <li>Illustrator</li>
+            <li>Pro Tools</li>
+            <li>GarageBand</li>
+            <li>FL Studio</li>
+            <li>Visual Studio</li>
+            <li>Maya</li>
+        </ul>
+        <p>List of coding languages I know,
+        in descending order of confidence
+        (I say "coding languages" instead of "programming languages"
+        because, although all of these are Turing-complete (I think),
+        some of them are in a weird development space
+        where describing their use as "programming" is contentious
+        for some reason):</p>
+        <ul><li>Ruby</li>
+            <li>Lua 5.1</li>
+            <li>JavaScript</li>
+            <li>C++</li>
+            <li>C</li>
+            <li>bash</li>
+            <li>Scheme</li>
+            <li>SQLite</li>
+            <li>MySQL</li>
+            <li>D</li>
+            <li>C#</li>
+            <li>PHP</li>
+            <li>Java</li>
+            <li>Haskell, vaguely</li>
+            <li>Python (yes, it really is all the way down here)</li>
+            <li>I've <em>looked</em> at something written in Perl
+            at some point in my life, I think</li>
+        </ul>
+    </details></section>
+    <section><details><summary><h3>Favorite games</h3></summary>
+        <p>Here are some of my favorite games:</p>
+        <ul><li><a href=
+                "https://se-made.com/voidstranger.html"
+            >Void Stranger</a></li>
+            <li><a href=
+                "https://www.mobiusdigitalgames.com/outer-wilds"
+            >Outer Wilds</a></li>
+            <li><a href=
+                "https://www.spike-chunsoft.com/games/zero-escape-nonary-games"
+            >Zero Escape trilogy</a></li>
+            <li><a href=
+                "https://www.celestegame.com"
+            >Celeste</a></li>
+            <li>Disco Elysium. No link. Pirate it.
+            The dev team literally want you to,
+            the company screwed them over.</li>
+        </ul>
+        <p>Narrative is the most important thing to me in a game.
+        To me, gameplay is also crucial, but primarily
+        because ludonarrative consonance serves the game's narrative.
+        I believe video games as a medium still have a lot
+        of unexplored potential to be developed as an art form
+        and convey strong emotional experiences.</p>
+        <p>There are also some games I like just for their gameplay,
+        though:</p>
+        <ul><li><a href=
+                "https://hempuli.com/baba"
+            >Baba Is You</a></li>
+            <li><a href=
+                "https://www.cassettebeasts.com"
+            >Cassette Beasts</a></li>
+            <li><a href=
+                "https://www.stardewvalley.net"
+            >Stardew Valley</a></li>
+        </ul>
+        <p>As well as some guilty pleasures, narrativewise, in which cases
+        I'm almost a little bit ashamed to say I think they were good,
+        because the menace that is cringe culture has damaged
+        my enjoyment of them:</p>
+        <ul><li><a href=
+                "https://www.omori-game.com"
+            >Omori</a></li>
+            <li><a href=
+                "https://undertale.com"
+            >Undertale</a></li>
+            <li>Mother 3 (no official website)</li>
+        </ul>
+    </details></section>
+</section>
+</main>
 </body>
 </html>
