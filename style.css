@@ -1,8 +1,16 @@
-body {
+:root {
     background-color: black;
+    background-image:
+        linear-gradient(to bottom, #000000b0, #000000e8),
+        url('./img/banner.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: top left;
+    background-attachment: fixed;
     color: white;
     font-family: sans-serif;
     font-size: 12pt;
+    height: 100vh;
 }
 
 a {
