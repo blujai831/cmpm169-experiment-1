@@ -10,7 +10,12 @@ echo "$pretty_date"
 
 # === Get commit message and devlog entry ===
 
-read -p "Commit message: " -e commit_message
+if (( $# )); then
+    commit_message="$*"
+    echo "Commit message: $commit_message"
+else
+    read -p "Commit message: " -e commit_message
+fi
 # Not strictly necessary (subprocess shenanigans)
 this_commit_message="$commit_message"
 

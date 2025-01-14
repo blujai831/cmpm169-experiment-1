@@ -1,0 +1,3 @@
+Tue, Jan 14 2025, 09:49:20am PST
+Modified commit.sh to allow for supplying the commit message in the argv.
+At one point, while I was working on experiment 1, I accidentally specified my commit message as an argument to my script instead of as the first line of input to it. I realized this was a perfectly reasonable and intuitive way of doing things and there was no reason for my script not to support it.
