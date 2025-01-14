@@ -1,0 +1,3 @@
+Mon, Jan 13 2025, 06:54:58pm PST
+In bin/commit.sh, try to ensure whole devlog entry is printed back before taking a screenshot
+In my first bin/commit.sh-generated commit, the screenshot only included as much of my devlog entry as could fit on one line of my terminal. I assume this is because scrot started before cat had technically finished, so I added a 0.1-second delay to try to address this.

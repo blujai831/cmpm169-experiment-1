@@ -26,6 +26,8 @@ cat << EOT
 Devlog entry:
 $devlog_entry
 EOT
+# Try to ensure whole message is printed before taking screenshot
+sleep 0.1
 
 # === Create devlog entry and screenshot ===
 
