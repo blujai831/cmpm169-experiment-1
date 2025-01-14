@@ -1,0 +1,5 @@
+Mon, Jan 13 2025, 09:08:27pm PST
+Overhaul sitewide stylesheet.
+I've started on a basic new sitewide style. This is taking HTML inspired by the HTML we were given, and adding novel CSS to it, so I'd argue it falls under *integration:* combining existing code with a new technique. (The new technique is my stylesheet.)
+
+The style is very basic right now. I'll work on making it a little bit more fun.
