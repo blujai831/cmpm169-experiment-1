@@ -59,3 +59,9 @@ section {
     border-radius: 1em;
     padding: 0.1em 1em;
 }
+
+.confidence-list {
+    color: transparent;
+    background: linear-gradient(to bottom, springgreen, moccasin, tomato);
+    background-clip: text;
+}

@@ -1,0 +1,3 @@
+Mon, Jan 13 2025, 09:22:08pm PST
+Style confidence lists in gradient text color starting at green at the top and transitioning to red at the bottom.
+I used a few lists in my homepage that were ordered in descending order of confidence. As a visual cue for this, I decided to use CSS to color them with a gradient.
