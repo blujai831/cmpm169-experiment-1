@@ -1,13 +1,20 @@
 #!/bin/bash
 if [[ -e log.local/pid ]]; then
     pid=$(<log.local/pid)
-    kill $pid
-    rm -rf log.local
-    sleep 1
     if ps --pid $pid > /dev/null 2>&1; then
-        echo "server will not stop (pid $pid)"
+        kill $pid
+        rm -rf log.local
+        sleep 1
+        if ps --pid $pid > /dev/null 2>&1; then
+            echo>&2 "server will not stop (pid $pid)"
+            exit 1
+        else
+            echo "server stopped"
+        fi
     else
-        echo "server stopped"
+        echo "cleaning up stale server pid file"
+        rm -f log.local/pid
+        exec "$BASH_SOURCE"
     fi
 else
     mkdir -p log.local
@@ -21,10 +28,11 @@ else
     if ps --pid $pid > /dev/null 2>&1; then
         echo "server running (pid $pid)"
     else
-        echo "server failed to start"
+        echo>&2 "server failed to start"
         if [[ -e log.local/http.err ]]; then
-            cat log.local/http.err
+            cat>&2 log.local/http.err
         fi
         rm -rf log.local
+        exit 1
     fi
 fi
