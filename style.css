@@ -93,3 +93,7 @@ section {
     width: 100%;
     z-index: -1;
 }
+
+.p5js-experiment {
+    text-align: center;
+}
