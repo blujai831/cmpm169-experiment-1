@@ -1,0 +1,3 @@
+Fri, Jan 17 2025, 05:54:57pm PST
+Explain commit accidentally created without bin/commit.sh (delete all currently extraneous files, edit index.html to reflect this)
+I don't have an experiment 2 or 3 yet, nor am I yet using per-page stylesheets nor homepage javascript, so all of those are gone for now. Experiment 1 is made no longer a link, to reflect that my homepage was my experiment 1. I already committed these changes, but forgot to do it through bin/commit.sh, so I'm now using bin/commit.sh to document it.
