@@ -10,6 +10,7 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Sat-Jan-18-2025-11-53-01-am-PST">Sat, Jan 18 2025, 11:53:01am PST&mdash;Do not use absolute symlinks in a project which is deployed elsewhere</a></li>
     <li><a href="#Sat-Jan-18-2025-11-48-05-am-PST">Sat, Jan 18 2025, 11:48:05am PST&mdash;Create experiments directory and symlink / as /experiments/1.</a></li>
     <li><a href="#Fri-Jan-17-2025-05-54-57-pm-PST">Fri, Jan 17 2025, 05:54:57pm PST&mdash;Explain commit accidentally created without bin/commit.sh (delete all currently extraneous files, edit index.html to reflect this)</a></li>
     <li><a href="#Wed-Jan-15-2025-05-59-08-pm-PST">Wed, Jan 15 2025, 05:59:08pm PST&mdash;In toggle-local-server.sh, use stderr and failure exit status if something goes wrong, and also be able to handle situations where server process was killed by some other means than our script (e.g. shutdown).</a></li>
@@ -26,6 +27,12 @@
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Sat-Jan-18-2025-11-53-01-am-PST">
+    <h2>Sat, Jan 18 2025, 11:53:01am PST&mdash;Do not use absolute symlinks in a project which is deployed elsewhere</h2>
+    <a href="Sat-Jan-18-2025-11-53-01-am-PST.png"><img src="Sat-Jan-18-2025-11-53-01-am-PST.png" alt="Do not use absolute symlinks in a project which is deployed elsewhere" /></a>
+    <p>In my previous commit, when I created a symlink, I created it as absolute, not thinking about the fact that my work would be deployed to github.io rather than remaining on my local machine. This commit fixes that mistake by replacing the symlink with a relative one.</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Sat-Jan-18-2025-11-48-05-am-PST">
     <h2>Sat, Jan 18 2025, 11:48:05am PST&mdash;Create experiments directory and symlink / as /experiments/1.</h2>
     <a href="Sat-Jan-18-2025-11-48-05-am-PST.png"><img src="Sat-Jan-18-2025-11-48-05-am-PST.png" alt="Create experiments directory and symlink / as /experiments/1." /></a>

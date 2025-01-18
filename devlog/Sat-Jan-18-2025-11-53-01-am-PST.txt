@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 11:53:01am PST
+Do not use absolute symlinks in a project which is deployed elsewhere
+In my previous commit, when I created a symlink, I created it as absolute, not thinking about the fact that my work would be deployed to github.io rather than remaining on my local machine. This commit fixes that mistake by replacing the symlink with a relative one.
