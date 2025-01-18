@@ -10,6 +10,7 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Sat-Jan-18-2025-03-20-08-pm-PST">Sat, Jan 18 2025, 03:20:08pm PST&mdash;Convert all same-origin absolute URIs to relative</a></li>
     <li><a href="#Sat-Jan-18-2025-03-14-20-pm-PST">Sat, Jan 18 2025, 03:14:20pm PST&mdash;Add p5js as library. Create empty p5js sketch as experiment 2.</a></li>
     <li><a href="#Sat-Jan-18-2025-12-02-41-pm-PST">Sat, Jan 18 2025, 12:02:41pm PST&mdash;Replace symlink with JS redirect because Jekyll can't into cyclic graphs</a></li>
     <li><a href="#Sat-Jan-18-2025-11-53-01-am-PST">Sat, Jan 18 2025, 11:53:01am PST&mdash;Do not use absolute symlinks in a project which is deployed elsewhere</a></li>
@@ -29,6 +30,12 @@
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Sat-Jan-18-2025-03-20-08-pm-PST">
+    <h2>Sat, Jan 18 2025, 03:20:08pm PST&mdash;Convert all same-origin absolute URIs to relative</h2>
+    <a href="Sat-Jan-18-2025-03-20-08-pm-PST.png"><img src="Sat-Jan-18-2025-03-20-08-pm-PST.png" alt="Convert all same-origin absolute URIs to relative" /></a>
+    <p>I forgot github.io has this issue where you can never use any absolute same-origin URIs anywhere if you want your static site to work both on your local machine and on github.io, because on github.io the static site will have a prefix to it. Actually, I should adjust my toggle-local-server.sh to take this into account by serving from the parent directory instead.</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Sat-Jan-18-2025-03-14-20-pm-PST">
     <h2>Sat, Jan 18 2025, 03:14:20pm PST&mdash;Add p5js as library. Create empty p5js sketch as experiment 2.</h2>
     <a href="Sat-Jan-18-2025-03-14-20-pm-PST.png"><img src="Sat-Jan-18-2025-03-14-20-pm-PST.png" alt="Add p5js as library. Create empty p5js sketch as experiment 2." /></a>

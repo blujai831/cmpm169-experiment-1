@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 03:20:08pm PST
+Convert all same-origin absolute URIs to relative
+I forgot github.io has this issue where you can never use any absolute same-origin URIs anywhere if you want your static site to work both on your local machine and on github.io, because on github.io the static site will have a prefix to it. Actually, I should adjust my toggle-local-server.sh to take this into account by serving from the parent directory instead.
