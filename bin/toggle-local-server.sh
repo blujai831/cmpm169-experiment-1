@@ -18,7 +18,7 @@ if [[ -e log.local/pid ]]; then
     fi
 else
     mkdir -p log.local
-    nohup python3 -m http.server`
+    nohup bash -c 'cd ..; python3 -m http.server'`
         ` > log.local/http.out`
         ` 2> log.local/http.err`
         ` & pid=$!
