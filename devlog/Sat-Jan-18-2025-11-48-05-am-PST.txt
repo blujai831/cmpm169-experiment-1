@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 11:48:05am PST
+Create experiments directory and symlink / as /experiments/1.
+I'm about to start working on experiment 2, so I once again have need for an experiments directory after all. I feel the structure of the experiments directory should reflect that experiment 1 exists, even though experiment 1 is the whole personal website. Therefore, I've symlinked the doc root as experiment 1 in the experiments directory.
