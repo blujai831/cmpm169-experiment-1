@@ -77,6 +77,7 @@ class RunawayButton extends Actor {
         this.maxBulletTimeout = 2.5;
         this.minShootMargin = 1.5;
         this.timeToNextBullet = this.maxBulletTimeout;
+        this.mouseWasPressed = mouseIsPressed;
     }
     isHovered() {
         return mouseX > this.x - this.width/2 &&
@@ -85,13 +86,16 @@ class RunawayButton extends Actor {
             mouseY < this.y + this.height/2;
     }
     isHeld() {
-        return (this.isHovered() || this.wasHeld) && mouseIsPressed;
+        return (
+            (this.isHovered() && !this.mouseWasPressed) ||
+            this.wasHeld
+        ) && mouseIsPressed;
     }
     isClicked() {
         return this.clickTimeout > 0;
     }
     canBeClicked() {
-        return this.isHovered() &&
+        return this.wasHeld &&
             !this.isClicked() &&
             !this.isTired() &&
             !this.isInvincible();
@@ -225,6 +229,7 @@ class RunawayButton extends Actor {
                 this.avoid();
             }
         }
+        this.mouseWasPressed = mouseIsPressed;
         this.move(aggression);
     }
     teleport(x, y) {
