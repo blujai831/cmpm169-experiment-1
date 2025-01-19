@@ -225,11 +225,11 @@ class RunawayButton extends Actor {
         } else if (this.isClicked()) {
             fg = color("#552222");
             bg = color("#aa7777");
-            msg = "Ow! Stop that!";
+            msg = "That all you got??";
         } else if (this.isHeld()) {
             fg = color("#aaaaaa");
             bg = color("#555555");
-            msg = "Ack! Let me go!";
+            msg = "En garde!";
         } else if (this.isHovered()) {
             fg = color("#777777");
             bg = color("#cccccc");

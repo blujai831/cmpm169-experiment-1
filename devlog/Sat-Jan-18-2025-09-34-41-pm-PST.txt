@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 09:34:41pm PST
+Make button state messages less overtly violent
+Overt violence no longer really fits the tone of the game. At first the joke was supposed to be "well if it hurts you, why did you tell me to do it" "well I didn't think you'd actually be able to catch me!" but when you keep doing it long after that point, it's not really funny anymore, just slightly sadistic. I also think these alternative button state messages better fit the overall competitive-spirit-type narrative tone of the game.
