@@ -12,12 +12,19 @@ class Actor {
         console.assert(what.prototype instanceof Actor);
         return new what(...args);
     }
-    static count(what) {
-        console.assert(what.prototype instanceof Actor);
+    static count(predicate) {
         let n = 0;
-        for (let actor of actors) {
-            if (actor instanceof what) {
-                n++;
+        if (predicate.prototype instanceof Actor) {
+            for (let actor of actors) {
+                if (actor instanceof predicate) {
+                    n++;
+                }
+            }
+        } else {
+            for (let actor of actors) {
+                if (predicate(actor)) {
+                    n++;
+                }
             }
         }
         return n;
@@ -25,7 +32,7 @@ class Actor {
     static find(predicate) {
         if (predicate.prototype instanceof Actor) {
             for (let actor of actors) {
-                if (actor instanceof what) {
+                if (actor instanceof predicate) {
                     return actor;
                 }
             }
@@ -101,7 +108,7 @@ class RunawayButton extends Actor {
         this.maxAvoidTries = 100;
         this.minBulletTimeout = 0.5;
         this.maxBulletTimeout = 2.5;
-        this.minShootMargin = 1.5;
+        this.minShootMargin = 2;
         this.timeToNextBullet = this.maxBulletTimeout;
         this.mouseWasPressed = mouseIsPressed;
     }
@@ -138,6 +145,7 @@ class RunawayButton extends Actor {
         if (this.isTired()) {
             this.fork();
         }
+        Actor.find(MilestoneTracker).score++;
     }
     draw() {
         let fg, bg, msg;
@@ -355,7 +363,7 @@ class ScrollingMessage extends Actor {
     }
     update() {
         this.x -= this.speed*deltaTime/(1000/60);
-        if (this.x < -10*WIDTH) {
+        if (this.x < -50*WIDTH) {
             this.despawn();
         }
     }
@@ -365,6 +373,7 @@ class MilestoneTracker extends Actor {
     reset(milestones) {
         this.milestones = {...milestones};
         this.milestonesMet = {};
+        this.score = 0;
     }
     update() {
         for (let milestone of Object.keys(this.milestones)) {
@@ -403,6 +412,13 @@ function resetGame() {
             )),
             action: () =>
                 Actor.spawn(ScrollingMessage, "Oh yeah?? How about THIS!?")
+        },
+        highScore: {
+            condition: () => Actor.count(RunawayButton) >= 8,
+            action: () =>
+                Actor.spawn(ScrollingMessage,
+                    "You think you're good enough to click me!? " +
+                    "I'll show you clicking like you've never even SEEN!!")
         }
     });
     Actor.spawn(RunawayButton);
@@ -432,7 +448,7 @@ function mouseClicked() {
 }
 
 function gameOver() {
-    let score = Actor.count(RunawayButton);
+    let score = Actor.find(MilestoneTracker).score;
     actors.length = 0;
     Actor.spawn(Scoreboard, score);
     Actor.spawn(PlayAgainButton);
