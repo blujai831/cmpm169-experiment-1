@@ -260,7 +260,7 @@ class Scoreboard extends Actor {
         noStroke();
         textFont("sans-serif", 48);
         textAlign(CENTER, CENTER);
-        text("Got you!\n" +
+        text("YOU'VE been clicked!\n" +
             `Your score: ${this.score}`,
             WIDTH/2, WIDTH/3);
     }
