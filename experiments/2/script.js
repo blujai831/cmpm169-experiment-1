@@ -12,6 +12,31 @@ class Actor {
         console.assert(what.prototype instanceof Actor);
         return new what(...args);
     }
+    static count(what) {
+        console.assert(what.prototype instanceof Actor);
+        let n = 0;
+        for (let actor of actors) {
+            if (actor instanceof what) {
+                n++;
+            }
+        }
+        return n;
+    }
+    static find(predicate) {
+        if (predicate.prototype instanceof Actor) {
+            for (let actor of actors) {
+                if (actor instanceof what) {
+                    return actor;
+                }
+            }
+        } else {
+            for (let actor of actors) {
+                if (predicate(actor)) {
+                    return actor;
+                }
+            }
+        }
+    }
     despawn() {
         actorsToDrop.push(this);
     }
@@ -313,6 +338,47 @@ class PlayAgainButton extends Actor {
     }
 }
 
+class ScrollingMessage extends Actor {
+    reset(msg, options = null) {
+        this.message = msg;
+        this.x = WIDTH;
+        this.speed = options?.speed || 12;
+        this.color = options?.color || "white";
+        this.size = options?.size || 288;
+    }
+    draw() {
+        fill(this.color);
+        noStroke();
+        textAlign(LEFT, CENTER);
+        textFont("sans-serif", this.size);
+        text(this.message, this.x, WIDTH/2);
+    }
+    update() {
+        this.x -= this.speed*deltaTime/(1000/60);
+        if (this.x < -10*WIDTH) {
+            this.despawn();
+        }
+    }
+}
+
+class MilestoneTracker extends Actor {
+    reset(milestones) {
+        this.milestones = {...milestones};
+        this.milestonesMet = {};
+    }
+    update() {
+        for (let milestone of Object.keys(this.milestones)) {
+            if (
+                this.milestones[milestone].condition() &&
+                !this.milestonesMet[milestone]
+            ) {
+                this.milestonesMet[milestone] = true;
+                this.milestones[milestone].action();
+            }
+        }
+    }
+}
+
 function removeItemsFromArray(array, predicate) {
     const removed = [];
     for (let i = array.length - 1; i >= 0; i--) {
@@ -330,6 +396,15 @@ function removeItemsFromArray(array, predicate) {
 
 function resetGame() {
     actors.length = 0;
+    Actor.spawn(MilestoneTracker, {
+        buttonsCanShoot: {
+            condition: () => !!Actor.find(actor => (
+                actor instanceof RunawayButton && actor.couldShoot()
+            )),
+            action: () =>
+                Actor.spawn(ScrollingMessage, "Oh yeah?? How about THIS!?")
+        }
+    });
     Actor.spawn(RunawayButton);
 }
 
@@ -357,12 +432,7 @@ function mouseClicked() {
 }
 
 function gameOver() {
-    let score = 0;
-    for (let actor of actors) {
-        if (actor instanceof RunawayButton) {
-            score++;
-        }
-    }
+    let score = Actor.count(RunawayButton);
     actors.length = 0;
     Actor.spawn(Scoreboard, score);
     Actor.spawn(PlayAgainButton);
