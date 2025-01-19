@@ -17,6 +17,7 @@ function removeItemsFromArray(array, predicate) {
 
 class Scene {
     static current = null;
+    static next = null;
     constructor(...layerOrder) {
         this.layerOrder = layerOrder;
         this.layers = {};
@@ -75,6 +76,10 @@ class Scene {
                 this.actorsToDrop.includes(actor));
         }
         this.actorsToDrop.length = 0;
+        if (Scene.next) {
+            Scene.current = new Scene.next[0](...Scene.next.slice(1));
+            Scene.next = null;
+        }
     }
     draw() {
         for (let layer of this.layerOrder) {
@@ -94,7 +99,13 @@ class Scene {
     }
     static change(what, ...args) {
         console.assert(what == Scene || what.prototype instanceof Scene);
-        Scene.current = new what(...args);
+        if (Scene.next) {
+            return;
+        } else if (Scene.current) {
+            Scene.next = [what, ...args];
+        } else {
+            Scene.current = new what(...args);
+        }
     }
 }
 
@@ -410,14 +421,14 @@ class ScrollingMessage extends Actor {
         this.message = msg;
         this.x = WIDTH;
         this.speed = options?.speed || 12;
-        this.color = options?.color || "white";
+        this.color = options?.color || "#555555";
         this.size = options?.size || 288;
     }
     draw() {
         fill(this.color);
         noStroke();
         textAlign(LEFT, CENTER);
-        textFont("sans-serif", this.size);
+        textFont("serif", this.size);
         text(this.message, this.x, WIDTH/2);
     }
     update() {
@@ -447,6 +458,86 @@ class MilestoneTracker extends Actor {
     }
 }
 
+class CoolBackground extends Actor {
+    reset() {
+        this.count = 16;
+        this.speed = 8;
+        this.initRadius = WIDTH/4;
+        this.minStrokeWeight = 0;
+        this.maxStrokeWeight = 8;
+        this.points = [];
+        this.maxBrightness = 0.25;
+        this.fadeInTime = 5;
+        this.fadeInTimer = this.fadeInTime;
+        for (let i = 0; i < this.count; i++) {
+            this.points.push({
+                id: i,
+                x: this.initRadius*Math.cos(2*Math.PI*i/this.count),
+                y: this.initRadius*Math.sin(2*Math.PI*i/this.count),
+                xDir: 1,
+                yDir: 1
+            });
+        }
+    }
+    coordToDelta(c) {
+        return this.speed*c/WIDTH;
+    }
+    coordOutOfBounds(c) {
+        return c > WIDTH/2 || c < -WIDTH/2;
+    }
+    updatePoint(p) {
+        p.x += p.xDir*this.coordToDelta(p.y);
+        p.y += p.yDir*this.coordToDelta(this.points[(p.id + 1)%this.count].x);
+        if (this.coordOutOfBounds(p.x)) p.xDir *= -1;
+        if (this.coordOutOfBounds(p.y)) p.yDir *= -1;
+    }
+    brightness() {
+        return lerp(this.maxBrightness, 0, this.fadeInTimer/this.fadeInTime);
+    }
+    drawLine(from, to) {
+        const b = Math.round(this.brightness()*(
+            100 -
+            100*dist(from.x, from.y, to.x, to.y)/Math.sqrt(2*WIDTH*WIDTH)
+        ));
+        let h =
+            Math.round(180*Math.atan2(to.y - from.y, to.x - from.x)/Math.PI);
+        while (h < 0) h += 360;
+        while (h >= 360) h -= 360;
+        stroke(`hsl(${h}, 100%, ${b}%)`);
+        strokeWeight(lerp(this.minStrokeWeight, this.maxStrokeWeight, b/100));
+        line(WIDTH/2 + from.x, WIDTH/2 + from.y,
+            WIDTH/2 + to.x, WIDTH/2 + to.y);
+    }
+    draw() {
+        for (let from of this.points) {
+            for (let to of this.points) {
+                if (from.id != to.id) {
+                    this.drawLine(from, to);
+                }
+            }
+        }
+    }
+    update() {
+        if (this.fadeInTimer > 0) {
+            this.fadeInTimer -= deltaTime/1000;
+            if (this.fadeInTimer < 0) {
+                this.fadeInTimer = 0;
+            }
+        }
+        const x0a = this.points[0].x;
+        for (let point of this.points) {
+            if (point.id == this.count - 1) {
+                const x0b = this.points[0].x;
+                this.points[0].x = x0a;
+                this.updatePoint(point);
+                this.points[0].x = x0b;
+            } else {
+                this.updatePoint(point);
+            }
+        }
+    }
+}
+
 class MainScene extends Scene {
     constructor() {
         super("background", "foreground");
@@ -460,11 +551,14 @@ class MainScene extends Scene {
                         "Oh yeah?? How about THIS!?")
             },
             rampUp: {
-                condition: () => this.count(RunawayButton) >= 8,
-                action: () =>
+                condition: () => this.count(RunawayButton) >= 7,
+                action: () => {
+                    this.spawn("background", CoolBackground);
                     this.spawn("background", ScrollingMessage,
                         "You think you're good enough to click me!? " +
-                        "I'll show you clicking like you've never even SEEN!!")
+                        "I'll show you clicking " +
+                        "like you've never even SEEN!!");
+                }
             }
         });
         this.spawn("foreground", RunawayButton);

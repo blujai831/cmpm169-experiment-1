@@ -10,6 +10,7 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Sat-Jan-18-2025-09-01-36-pm-PST">Sat, Jan 18 2025, 09:01:36pm PST&mdash;In experiment 2, add a cool background that kicks in when you progress far enough to activate the second taunt. Also, change taunt font and color. Also, fix bug that can result from two actors trying to change the scene in the same update cycle.</a></li>
     <li><a href="#Sat-Jan-18-2025-08-15-02-pm-PST">Sat, Jan 18 2025, 08:15:02pm PST&mdash;In experiment 2, abstract actor list management into Scene class.</a></li>
     <li><a href="#Sat-Jan-18-2025-07-37-50-pm-PST">Sat, Jan 18 2025, 07:37:50pm PST&mdash;Make various QOL adjustments to experiment 2</a></li>
     <li><a href="#Sat-Jan-18-2025-06-57-08-pm-PST">Sat, Jan 18 2025, 06:57:08pm PST&mdash;Fix lingering absolute same-origin link in experiment 2's index.html</a></li>
@@ -44,6 +45,12 @@
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Sat-Jan-18-2025-09-01-36-pm-PST">
+    <h2>Sat, Jan 18 2025, 09:01:36pm PST&mdash;In experiment 2, add a cool background that kicks in when you progress far enough to activate the second taunt. Also, change taunt font and color. Also, fix bug that can result from two actors trying to change the scene in the same update cycle.</h2>
+    <a href="Sat-Jan-18-2025-09-01-36-pm-PST.png"><img src="Sat-Jan-18-2025-09-01-36-pm-PST.png" alt="In experiment 2, add a cool background that kicks in when you progress far enough to activate the second taunt. Also, change taunt font and color. Also, fix bug that can result from two actors trying to change the scene in the same update cycle." /></a>
+    <p>I feel this background adds a lot to the vector art aspect of the experiment, and is also mathematically interesting. How it works is, if you take each vertex of the background and lay their coordinates flat one after the other, so you get a list of plain numbers x1, y1, x2, y2, x3, y3, etc, then each of those numbers is used as the rate of change for the next one -- modularly, so that the first number is used as the rate of change for the last number.</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Sat-Jan-18-2025-08-15-02-pm-PST">
     <h2>Sat, Jan 18 2025, 08:15:02pm PST&mdash;In experiment 2, abstract actor list management into Scene class.</h2>
     <a href="Sat-Jan-18-2025-08-15-02-pm-PST.png"><img src="Sat-Jan-18-2025-08-15-02-pm-PST.png" alt="In experiment 2, abstract actor list management into Scene class." /></a>

@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 09:01:36pm PST
+In experiment 2, add a cool background that kicks in when you progress far enough to activate the second taunt. Also, change taunt font and color. Also, fix bug that can result from two actors trying to change the scene in the same update cycle.
+I feel this background adds a lot to the vector art aspect of the experiment, and is also mathematically interesting. How it works is, if you take each vertex of the background and lay their coordinates flat one after the other, so you get a list of plain numbers x1, y1, x2, y2, x3, y3, etc, then each of those numbers is used as the rate of change for the next one -- modularly, so that the first number is used as the rate of change for the last number.
