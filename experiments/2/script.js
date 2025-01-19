@@ -167,7 +167,7 @@ class RunawayButton extends Actor {
         this.targetY = this.y;
         this.clickTimeout = 0;
         this.timesClicked = 0;
-        this.avoidMargin = 1.1;
+        this.avoidMargin = 0.75;
         this.avoidAggression = 0.03;
         this.followAggression = 0.5;
         this.clickDuration = 1;
@@ -177,7 +177,7 @@ class RunawayButton extends Actor {
         this.maxAvoidTries = 100;
         this.minBulletTimeout = 0.5;
         this.maxBulletTimeout = 2.5;
-        this.minShootMargin = 2;
+        this.minShootMargin = 2.3;
         this.timeToNextBullet = this.maxBulletTimeout;
         this.mouseWasPressed = mouseIsPressed;
     }
