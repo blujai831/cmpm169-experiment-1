@@ -131,12 +131,25 @@ class Bullet extends Actor {
         const mDist = dist(x, y, mouseX, mouseY);
         this.xSpeed = speed*(mouseX - x)/mDist;
         this.ySpeed = speed*(mouseY - y)/mDist;
+        this.angle = Math.atan2(this.ySpeed, this.xSpeed);
     }
     draw() {
         strokeWeight(2);
         stroke(color("#800000"));
         fill(color("#ff0000"));
-        circle(this.x, this.y, this.size);
+        push();
+        translate(this.x, this.y);
+        rotate(this.angle);
+        beginShape();
+        vertex(this.size, 0);
+        vertex(0, this.size);
+        vertex(0, this.size/2);
+        vertex(-this.size, this.size/2);
+        vertex(-this.size, -this.size/2);
+        vertex(0, -this.size/2);
+        vertex(0, -this.size);
+        endShape();
+        pop();
     }
     outOfBounds() {
         return this.x < -this.size || this.x > WIDTH + this.size ||
@@ -574,7 +587,7 @@ class MainScene extends Scene {
                 action: () => {
                     this.spawn("background", RainbowFadeBackground);
                     this.spawn("background", ScrollingMessage,
-                        "Oh yeah?? How about THIS!?")
+                        "Oh yeah!? Two can play at that game!!")
                 }
             },
             rampUp: {
