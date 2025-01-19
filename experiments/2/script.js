@@ -458,6 +458,31 @@ class MilestoneTracker extends Actor {
     }
 }
 
+class RainbowFadeBackground extends Actor {
+    reset() {
+        this.hue = 0;
+        this.brightness = 0;
+        this.targetBrightness = 0.05;
+        this.speed = 1;
+        this.brightnessAggression = 0.03;
+    }
+    update() {
+        this.speed =
+            (this.scene.find(MilestoneTracker)?.score || 30)/30;
+        this.hue = (this.hue + this.speed*deltaTime/(1000/60))%360;
+        this.brightness =
+            lerp(this.brightness, this.targetBrightness,
+                this.brightnessAggression);
+    }
+    draw() {
+        background(`hsl(${
+            Math.round(this.hue)
+        }, 100%, ${
+            Math.round(100*this.brightness)
+        }%)`);
+    }
+}
+
 class CoolBackground extends Actor {
     reset() {
         this.count = 16;
@@ -546,9 +571,11 @@ class MainScene extends Scene {
                 condition: () => !!this.find(actor => (
                     actor instanceof RunawayButton && actor.couldShoot()
                 )),
-                action: () =>
+                action: () => {
+                    this.spawn("background", RainbowFadeBackground);
                     this.spawn("background", ScrollingMessage,
                         "Oh yeah?? How about THIS!?")
+                }
             },
             rampUp: {
                 condition: () => this.count(RunawayButton) >= 7,
