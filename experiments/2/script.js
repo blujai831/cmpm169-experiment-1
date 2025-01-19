@@ -1,11 +1,60 @@
 const WIDTH = 512;
 
-const runawayButtons = [];
+const actors = [];
 
-class RunawayButton {
-    constructor() {
-        this.reset();
+class Actor {
+    constructor(...args) {
+        actors.push(this);
+        this.reset(...args);
     }
+    static spawn(what, ...args) {
+        console.assert(what.prototype instanceof Actor);
+        return new what(...args);
+    }
+    despawn() {
+        removeItemFromArray(actors, item => item == this);
+    }
+    reset(...args) {}
+    canBeClicked() {}
+    doClick() {}
+    draw() {}
+    update() {}
+}
+
+class Bullet extends Actor {
+    reset(x, y, size, speed) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        const mDist = dist(x, y, mouseX, mouseY);
+        this.xSpeed = speed*(mouseX - x)/mDist;
+        this.ySpeed = speed*(mouseY - y)/mDist;
+    }
+    draw() {
+        strokeWeight(2);
+        stroke(color("#800000"));
+        fill(color("#ff0000"));
+        circle(this.x, this.y, this.size);
+    }
+    outOfBounds() {
+        return this.x < -this.size || this.x > WIDTH + this.size ||
+            this.y < -this.size || this.y > WIDTH + this.size;
+    }
+    isHovered() {
+        return dist(this.x, this.y, mouseX, mouseY) < this.size;
+    }
+    update() {
+        this.x += this.xSpeed*deltaTime/(1000/60);
+        this.y += this.ySpeed*deltaTime/(1000/60);
+        if (this.outOfBounds()) {
+            this.despawn();
+        } else if (this.isHovered()) {
+            gameOver();
+        }
+    }
+}
+
+class RunawayButton extends Actor {
     reset() {
         this.x = WIDTH/2;
         this.y = WIDTH/2;
@@ -24,6 +73,10 @@ class RunawayButton {
         this.timeToDisappear = 3;
         this.timeInvincible = 1;
         this.maxAvoidTries = 100;
+        this.minBulletTimeout = 0.5;
+        this.maxBulletTimeout = 2.5;
+        this.minShootMargin = 1.5;
+        this.timeToNextBullet = this.maxBulletTimeout;
     }
     isHovered() {
         return mouseX > this.x - this.width/2 &&
@@ -121,7 +174,7 @@ class RunawayButton {
         this.x = lerp(this.x, this.targetX, aggression);
         this.y = lerp(this.y, this.targetY, aggression);
     }
-    update() {
+    updateTimers() {
         if (this.isClicked()) {
             this.clickTimeout -= deltaTime/1000;
         }
@@ -131,8 +184,35 @@ class RunawayButton {
         if (this.isTired()) {
             this.timeToDisappear -= deltaTime/1000;
             if (this.timeToDisappear <= 0) {
-                removeItemFromArray(runawayButtons, item => item == this);
+                this.despawn();
             }
+        }
+        if (this.couldShoot() && !this.canShoot()) {
+            this.timeToNextBullet -= deltaTime/1000;
+        }
+    }
+    couldShoot() {
+        return this.width <= WIDTH/3 &&
+            dist(this.x, this.y, mouseX, mouseY) >=
+            this.minShootMargin*this.width;
+    }
+    canShoot() {
+        return this.couldShoot() && this.timeToNextBullet <= 0;
+    }
+    shoot() {
+        Actor.spawn(
+            Bullet,
+            this.x, this.y,
+            lerp(8, 16, Math.random()),
+            lerp(4, 8, Math.random())
+        );
+        this.timeToNextBullet =
+            lerp(this.minBulletTimeout, this.maxBulletTimeout, Math.random());
+    }
+    update() {
+        this.updateTimers();
+        if (this.canShoot()) {
+            this.shoot();
         }
         let aggression = this.avoidAggression;
         if (this.isHeld()) {
@@ -156,16 +236,30 @@ class RunawayButton {
     fork() {
         const sqrt2 = Math.sqrt(2);
         for (let i = 0; i < 2; i++) {
-            let child = new RunawayButton();
+            let child = Actor.spawn(RunawayButton);
             child.teleport(this.x, this.y);
             child.width = this.width/sqrt2;
             child.height = this.height/sqrt2;
             child.fontSize = this.fontSize/sqrt2;
             child.avoidAggression = this.avoidAggression*sqrt2;
-            runawayButtons.push(child);
         }
     }
 };
+
+class Scoreboard extends Actor {
+    reset(score) {
+        this.score = score;
+    }
+    draw() {
+        fill(color("#ff0000"));
+        noStroke();
+        textFont("sans-serif", 48);
+        textAlign(CENTER, CENTER);
+        text("Got you!\n" +
+            `Your score: ${this.score}`,
+            WIDTH/2, WIDTH/2);
+    }
+}
 
 function removeItemFromArray(array, predicate, all = false) {
     const removed = [];
@@ -190,22 +284,33 @@ function removeItemFromArray(array, predicate, all = false) {
 
 function setup() {
     createCanvas(WIDTH, WIDTH, document.querySelector("#p5js-canvas"));
-    runawayButtons.length = 0;
-    runawayButtons.push(new RunawayButton());
+    actors.length = 0;
+    Actor.spawn(RunawayButton);
 }
 
 function draw() {
     background("black");
-    for (let button of runawayButtons) {
-        button.draw();
-        button.update();
+    for (let actor of actors) {
+        actor.draw();
+        actor.update();
     }
 }
 
 function mouseClicked() {
-    for (let button of runawayButtons) {
-        if (button.canBeClicked()) {
-            button.doClick();
+    for (let actor of actors) {
+        if (actor.canBeClicked()) {
+            actor.doClick();
         }
     }
+}
+
+function gameOver() {
+    let score = 0;
+    for (let actor of actors) {
+        if (actor instanceof RunawayButton) {
+            score++;
+        }
+    }
+    actors.length = 0;
+    Actor.spawn(Scoreboard, score);
 }

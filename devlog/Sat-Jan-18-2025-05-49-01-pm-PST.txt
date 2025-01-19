@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 05:49:01pm PST
+Add shmup combat to experiment 2
+Now the click here buttons try to shoot your mouse. If they get you, the game ends. Now *this* is innovation!
