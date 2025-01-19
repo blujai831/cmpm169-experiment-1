@@ -1,0 +1,3 @@
+Sat, Jan 18 2025, 04:23:23pm PST
+Implement experiment 2 as a catch-the-button game.
+The button says "Click Here," inviting you to click it, but it runs away from you. Once you've clicked it 5 times, you win. This isn't really a novel concept, but I did implement it in p5js, which is new to me, and the irony of having the runaway object be a button that says "Click Here" is somewhat novel, even though neither click-the-runaway-object games nor buttons that say "Click Here" are novel in and of themselves. Therefore, I'd say this counts as part of the "integrate" step.
