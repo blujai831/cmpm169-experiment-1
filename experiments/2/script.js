@@ -1,6 +1,7 @@
 const WIDTH = 512;
 
 const actors = [];
+const actorsToDrop = [];
 
 class Actor {
     constructor(...args) {
@@ -12,7 +13,7 @@ class Actor {
         return new what(...args);
     }
     despawn() {
-        removeItemFromArray(actors, item => item == this);
+        actorsToDrop.push(this);
     }
     reset(...args) {}
     canBeClicked() {}
@@ -312,7 +313,7 @@ class PlayAgainButton extends Actor {
     }
 }
 
-function removeItemFromArray(array, predicate, all = false) {
+function removeItemsFromArray(array, predicate) {
     const removed = [];
     for (let i = array.length - 1; i >= 0; i--) {
         const item = array[i];
@@ -321,16 +322,10 @@ function removeItemFromArray(array, predicate, all = false) {
                 array[j] = array[j + 1];
             }
             array.length--;
-            if (all) {
-                removed.push(item);
-            } else {
-                return item;
-            }
+            removed.push(item);
         }
     }
-    if (all) {
-        return removed;
-    }
+    return removed;
 }
 
 function resetGame() {
@@ -349,6 +344,8 @@ function draw() {
         actor.draw();
         actor.update();
     }
+    removeItemsFromArray(actors, actor => actorsToDrop.includes(actor));
+    actorsToDrop.length = 0;
 }
 
 function mouseClicked() {
