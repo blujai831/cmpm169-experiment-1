@@ -1,51 +1,109 @@
 const WIDTH = 512;
 
-const actors = [];
-const actorsToDrop = [];
+function removeItemsFromArray(array, predicate) {
+    const removed = [];
+    for (let i = array.length - 1; i >= 0; i--) {
+        const item = array[i];
+        if (predicate(item)) {
+            for (let j = i; j < array.length - 1; j++) {
+                array[j] = array[j + 1];
+            }
+            array.length--;
+            removed.push(item);
+        }
+    }
+    return removed;
+}
+
+class Scene {
+    static current = null;
+    constructor(...layerOrder) {
+        this.layerOrder = layerOrder;
+        this.layers = {};
+        this.actorsToDrop = [];
+        for (let layer of this.layerOrder) {
+            this.layers[layer] = [];
+        }
+    }
+    spawn(where, what, ...args) {
+        console.assert(what.prototype instanceof Actor);
+        let actor = new what(...args);
+        this.layers[where].push(actor);
+        actor.scene = this;
+        actor.layer = where;
+        return actor;
+    }
+    despawn(what) {
+        this.actorsToDrop.push(what);
+    }
+    findAll(...args) {
+        let layers, predicate;
+        if (args.length > 1) {
+            let layer;
+            ([layer, predicate] = args);
+            layers = [layer];
+        } else {
+            layers = this.layerOrder;
+            ([predicate] = args);
+        }
+        if (predicate.prototype instanceof Actor) {
+            let klass = predicate;
+            predicate = actor => actor instanceof klass;
+        }
+        let actors = [];
+        for (let layer of layers) {
+            for (let actor of this.layers[layer]) {
+                if (predicate(actor)) {
+                    actors.push(actor);
+                }
+            }
+        }
+        return actors;
+    }
+    find(...args) {
+        return this.findAll(...args)[0];
+    }
+    count(...args) {
+        return this.findAll(...args).length;
+    }
+    update() {
+        for (let layer of this.layerOrder) {
+            for (let actor of this.layers[layer]) {
+                actor.update();
+            }
+            removeItemsFromArray(this.layers[layer], actor =>
+                this.actorsToDrop.includes(actor));
+        }
+        this.actorsToDrop.length = 0;
+    }
+    draw() {
+        for (let layer of this.layerOrder) {
+            for (let actor of this.layers[layer]) {
+                actor.draw();
+            }
+        }
+    }
+    doClick() {
+        for (let layer of this.layerOrder) {
+            for (let actor of this.layers[layer]) {
+                if (actor.canBeClicked()) {
+                    actor.doClick();
+                }
+            }
+        }
+    }
+    static change(what, ...args) {
+        console.assert(what == Scene || what.prototype instanceof Scene);
+        Scene.current = new what(...args);
+    }
+}
 
 class Actor {
     constructor(...args) {
-        actors.push(this);
         this.reset(...args);
     }
-    static spawn(what, ...args) {
-        console.assert(what.prototype instanceof Actor);
-        return new what(...args);
-    }
-    static count(predicate) {
-        let n = 0;
-        if (predicate.prototype instanceof Actor) {
-            for (let actor of actors) {
-                if (actor instanceof predicate) {
-                    n++;
-                }
-            }
-        } else {
-            for (let actor of actors) {
-                if (predicate(actor)) {
-                    n++;
-                }
-            }
-        }
-        return n;
-    }
-    static find(predicate) {
-        if (predicate.prototype instanceof Actor) {
-            for (let actor of actors) {
-                if (actor instanceof predicate) {
-                    return actor;
-                }
-            }
-        } else {
-            for (let actor of actors) {
-                if (predicate(actor)) {
-                    return actor;
-                }
-            }
-        }
-    }
     despawn() {
-        actorsToDrop.push(this);
+        this.scene.despawn(this);
     }
     reset(...args) {}
     canBeClicked() {}
@@ -145,7 +203,7 @@ class RunawayButton extends Actor {
         if (this.isTired()) {
             this.fork();
         }
-        Actor.find(MilestoneTracker).score++;
+        Scene.current.find(MilestoneTracker).score++;
     }
     draw() {
         let fg, bg, msg;
@@ -238,7 +296,8 @@ class RunawayButton extends Actor {
         return this.couldShoot() && this.timeToNextBullet <= 0;
     }
     shoot() {
-        Actor.spawn(
+        Scene.current.spawn(
+            "foreground",
             Bullet,
             this.x, this.y,
             lerp(8, 16, Math.random()),
@@ -275,7 +334,7 @@ class RunawayButton extends Actor {
     fork() {
         const sqrt2 = Math.sqrt(2);
         for (let i = 0; i < 2; i++) {
-            let child = Actor.spawn(RunawayButton);
+            let child = Scene.current.spawn("foreground", RunawayButton);
             child.teleport(this.x, this.y);
             child.width = this.width/sqrt2;
             child.height = this.height/sqrt2;
@@ -388,40 +447,40 @@ class MilestoneTracker extends Actor {
     }
 }
 
-function removeItemsFromArray(array, predicate) {
-    const removed = [];
-    for (let i = array.length - 1; i >= 0; i--) {
-        const item = array[i];
-        if (predicate(item)) {
-            for (let j = i; j < array.length - 1; j++) {
-                array[j] = array[j + 1];
+class MainScene extends Scene {
+    constructor() {
+        super("background", "foreground");
+        this.spawn("background", MilestoneTracker, {
+            buttonsCanShoot: {
+                condition: () => !!this.find(actor => (
+                    actor instanceof RunawayButton && actor.couldShoot()
+                )),
+                action: () =>
+                    this.spawn("background", ScrollingMessage,
+                        "Oh yeah?? How about THIS!?")
+            },
+            rampUp: {
+                condition: () => this.count(RunawayButton) >= 8,
+                action: () =>
+                    this.spawn("background", ScrollingMessage,
+                        "You think you're good enough to click me!? " +
+                        "I'll show you clicking like you've never even SEEN!!")
             }
-            array.length--;
-            removed.push(item);
-        }
+        });
+        this.spawn("foreground", RunawayButton);
     }
-    return removed;
+}
+
+class GameOverScene extends Scene {
+    constructor(score) {
+        super("background", "foreground");
+        this.spawn("foreground", Scoreboard, score);
+        this.spawn("foreground", PlayAgainButton);
+    }
 }
 
 function resetGame() {
-    actors.length = 0;
-    Actor.spawn(MilestoneTracker, {
-        buttonsCanShoot: {
-            condition: () => !!Actor.find(actor => (
-                actor instanceof RunawayButton && actor.couldShoot()
-            )),
-            action: () =>
-                Actor.spawn(ScrollingMessage, "Oh yeah?? How about THIS!?")
-        },
-        highScore: {
-            condition: () => Actor.count(RunawayButton) >= 8,
-            action: () =>
-                Actor.spawn(ScrollingMessage,
-                    "You think you're good enough to click me!? " +
-                    "I'll show you clicking like you've never even SEEN!!")
-        }
-    });
-    Actor.spawn(RunawayButton);
+    Scene.change(MainScene);
 }
 
 function setup() {
@@ -431,25 +490,15 @@ function setup() {
 
 function draw() {
     background("black");
-    for (let actor of actors) {
-        actor.draw();
-        actor.update();
-    }
-    removeItemsFromArray(actors, actor => actorsToDrop.includes(actor));
-    actorsToDrop.length = 0;
+    Scene.current.draw();
+    Scene.current.update();
 }
 
 function mouseClicked() {
-    for (let actor of actors) {
-        if (actor.canBeClicked()) {
-            actor.doClick();
-        }
-    }
+    Scene.current.doClick();
 }
 
 function gameOver() {
-    let score = Actor.find(MilestoneTracker).score;
-    actors.length = 0;
-    Actor.spawn(Scoreboard, score);
-    Actor.spawn(PlayAgainButton);
+    let score = Scene.current.find(MilestoneTracker).score;
+    Scene.change(GameOverScene, score);
 }
