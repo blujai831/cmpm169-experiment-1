@@ -257,7 +257,53 @@ class Scoreboard extends Actor {
         textAlign(CENTER, CENTER);
         text("Got you!\n" +
             `Your score: ${this.score}`,
-            WIDTH/2, WIDTH/2);
+            WIDTH/2, WIDTH/3);
+    }
+}
+
+class PlayAgainButton extends Actor {
+    reset() {
+        this.timeSinceSpawn = 0;
+    }
+    isHovered() {
+        return mouseX > WIDTH/4 && mouseX < 3*WIDTH/4 &&
+            mouseY > WIDTH/2 && mouseY < 5*WIDTH/6;
+    }
+    isHeld() {
+        return this.isHovered() && mouseIsPressed;
+    }
+    canBeClicked() {
+        return this.isHovered() && this.timeSinceSpawn > 1;
+    }
+    doClick() {
+        resetGame();
+    }
+    update() {
+        this.timeSinceSpawn += deltaTime/1000;
+    }
+    draw() {
+        let fg, bg, msg;
+        msg = "Play Again";
+        if (this.isHeld()) {
+            fg = "#aaaaaa";
+            bg = "#555555";
+            msg = "... if you dare!";
+        } else if (this.isHovered()) {
+            fg = "#777777";
+            bg = "#cccccc";
+        } else {
+            fg = "#555555";
+            bg = "#aaaaaa";
+        }
+        strokeWeight(4);
+        stroke(fg);
+        fill(bg);
+        rect(WIDTH/4, WIDTH/2, WIDTH/2, WIDTH/3, WIDTH/8);
+        textFont("sans-serif", 36);
+        fill(fg);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        text(msg, WIDTH/2, 2*WIDTH/3);
     }
 }
 
@@ -282,10 +328,14 @@ function removeItemFromArray(array, predicate, all = false) {
     }
 }
 
-function setup() {
-    createCanvas(WIDTH, WIDTH, document.querySelector("#p5js-canvas"));
+function resetGame() {
     actors.length = 0;
     Actor.spawn(RunawayButton);
+}
+
+function setup() {
+    createCanvas(WIDTH, WIDTH, document.querySelector("#p5js-canvas"));
+    resetGame();
 }
 
 function draw() {
@@ -313,4 +363,5 @@ function gameOver() {
     }
     actors.length = 0;
     Actor.spawn(Scoreboard, score);
+    Actor.spawn(PlayAgainButton);
 }
