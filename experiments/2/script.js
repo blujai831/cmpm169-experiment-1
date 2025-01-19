@@ -1,23 +1,29 @@
 const WIDTH = 512;
 
-const theButton = new class {
+const runawayButtons = [];
+
+class RunawayButton {
     constructor() {
         this.reset();
     }
     reset() {
         this.x = WIDTH/2;
         this.y = WIDTH/2;
-        this.width = WIDTH/4;
-        this.height = WIDTH/16;
+        this.width = WIDTH/2;
+        this.height = WIDTH/8;
+        this.fontSize = 24;
         this.targetX = this.x;
         this.targetY = this.y;
         this.clickTimeout = 0;
         this.timesClicked = 0;
+        this.avoidMargin = 1.1;
         this.avoidAggression = 0.03;
         this.followAggression = 0.5;
-        this.aggression = this.avoidAggression;
         this.clickDuration = 1;
         this.wasHeld = false;
+        this.timeToDisappear = 3;
+        this.timeInvincible = 1;
+        this.maxAvoidTries = 100;
     }
     isHovered() {
         return mouseX > this.x - this.width/2 &&
@@ -32,7 +38,13 @@ const theButton = new class {
         return this.clickTimeout > 0;
     }
     canBeClicked() {
-        return this.isHovered() && !this.isClicked() && !this.isTired();
+        return this.isHovered() &&
+            !this.isClicked() &&
+            !this.isTired() &&
+            !this.isInvincible();
+    }
+    isInvincible() {
+        return this.timeInvincible > 0;
     }
     isTired() {
         return this.timesClicked >= 5;
@@ -40,6 +52,9 @@ const theButton = new class {
     doClick() {
         this.clickTimeout = this.clickDuration;
         this.timesClicked++;
+        if (this.isTired()) {
+            this.fork();
+        }
     }
     draw() {
         let fg, bg, msg;
@@ -71,20 +86,30 @@ const theButton = new class {
             this.width, this.height, this.height/4);
         fill(fg);
         noStroke();
-        textFont("sans-serif", 12);
+        textFont("sans-serif", this.fontSize);
         textAlign(CENTER, CENTER);
         text(msg, this.x, this.y);
     }
     avoid() {
-        while (dist(
-            this.targetX, this.targetY,
-            mouseX, mouseY
-        ) <= this.width*1.5) {
-            this.targetX =
+        let tries = this.maxAvoidTries;
+        let best = dist(this.targetX, this.targetY, mouseX, mouseY);
+        let bestX = this.targetX;
+        let bestY = this.targetY;
+        while (tries > 0 && best <= this.width*this.avoidMargin) {
+            let candidateX =
                 lerp(this.width/2, WIDTH - this.width/2, Math.random());
-            this.targetY =
+            let candidateY =
                 lerp(this.height/2, WIDTH - this.height/2, Math.random());
+            let candidate = dist(candidateX, candidateY, mouseX, mouseY);
+            if (candidate > best) {
+                best = candidate;
+                bestX = candidateX;
+                bestY = candidateY;
+            }
+            tries--;
         }
+        this.targetX = bestX;
+        this.targetY = bestY;
         this.aggression = this.avoidAggression;
     }
     follow() {
@@ -92,12 +117,27 @@ const theButton = new class {
         this.targetY = mouseY;
         this.aggression = this.followAggression;
     }
+    move(aggression) {
+        this.x = lerp(this.x, this.targetX, aggression);
+        this.y = lerp(this.y, this.targetY, aggression);
+    }
     update() {
         if (this.isClicked()) {
             this.clickTimeout -= deltaTime/1000;
         }
+        if (this.isInvincible()) {
+            this.timeInvincible -= deltaTime/1000;
+        }
+        if (this.isTired()) {
+            this.timeToDisappear -= deltaTime/1000;
+            if (this.timeToDisappear <= 0) {
+                removeItemFromArray(runawayButtons, item => item == this);
+            }
+        }
+        let aggression = this.avoidAggression;
         if (this.isHeld()) {
             this.wasHeld = true;
+            aggression = this.followAggression;
             this.follow();
         } else {
             this.wasHeld = false;
@@ -105,24 +145,67 @@ const theButton = new class {
                 this.avoid();
             }
         }
-        this.x = lerp(this.x, this.targetX, this.aggression);
-        this.y = lerp(this.y, this.targetY, this.aggression);
+        this.move(aggression);
+    }
+    teleport(x, y) {
+        this.x = x;
+        this.y = y;
+        this.targetX = x;
+        this.targetY = y;
+    }
+    fork() {
+        const sqrt2 = Math.sqrt(2);
+        for (let i = 0; i < 2; i++) {
+            let child = new RunawayButton();
+            child.teleport(this.x, this.y);
+            child.width = this.width/sqrt2;
+            child.height = this.height/sqrt2;
+            child.fontSize = this.fontSize/sqrt2;
+            child.avoidAggression = this.avoidAggression*sqrt2;
+            runawayButtons.push(child);
+        }
     }
 };
 
+function removeItemFromArray(array, predicate, all = false) {
+    const removed = [];
+    for (let i = array.length - 1; i >= 0; i--) {
+        const item = array[i];
+        if (predicate(item)) {
+            for (let j = i; j < array.length - 1; j++) {
+                array[j] = array[j + 1];
+            }
+            array.length--;
+            if (all) {
+                removed.push(item);
+            } else {
+                return item;
+            }
+        }
+    }
+    if (all) {
+        return removed;
+    }
+}
+
 function setup() {
     createCanvas(WIDTH, WIDTH, document.querySelector("#p5js-canvas"));
-    theButton.reset();
+    runawayButtons.length = 0;
+    runawayButtons.push(new RunawayButton());
 }
 
 function draw() {
     background("black");
-    theButton.draw();
-    theButton.update();
+    for (let button of runawayButtons) {
+        button.draw();
+        button.update();
+    }
 }
 
 function mouseClicked() {
-    if (theButton.canBeClicked()) {
-        theButton.doClick();
+    for (let button of runawayButtons) {
+        if (button.canBeClicked()) {
+            button.doClick();
+        }
     }
 }
