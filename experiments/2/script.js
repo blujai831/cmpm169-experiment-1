@@ -1,3 +1,5 @@
+import { AudioManager } from "./snd/script.js";
+
 const WIDTH = 512;
 
 function removeItemsFromArray(array, predicate) {
@@ -222,9 +224,11 @@ class RunawayButton extends Actor {
         return this.timesClicked >= 5;
     }
     doClick() {
+        AudioManager.playSample("click");
         this.clickTimeout = this.clickDuration;
         this.timesClicked++;
         if (this.isTired()) {
+            AudioManager.playSample("win");
             this.fork();
         }
         Scene.current.find(MilestoneTracker).score++;
@@ -320,6 +324,7 @@ class RunawayButton extends Actor {
         return this.couldShoot() && this.timeToNextBullet <= 0;
     }
     shoot() {
+        AudioManager.playSample("shoot");
         Scene.current.spawn(
             "foreground",
             Bullet,
@@ -398,6 +403,7 @@ class PlayAgainButton extends Actor {
         return this.isHovered() && this.timeSinceSpawn > 1;
     }
     doClick() {
+        AudioManager.playSample("click");
         resetGame();
     }
     update() {
@@ -436,6 +442,7 @@ class ScrollingMessage extends Actor {
         this.speed = options?.speed || 12;
         this.color = options?.color || "#555555";
         this.size = options?.size || 288;
+        AudioManager.playSample("taunt");
     }
     draw() {
         fill(this.color);
@@ -610,6 +617,7 @@ class GameOverScene extends Scene {
         super("background", "foreground");
         this.spawn("foreground", Scoreboard, score);
         this.spawn("foreground", PlayAgainButton);
+        AudioManager.playSample("gameover");
     }
 }
 
@@ -629,6 +637,7 @@ function draw() {
 }
 
 function mouseClicked() {
+    console.log("HELP ME");
     Scene.current.doClick();
 }
 
@@ -636,3 +645,7 @@ function gameOver() {
     let score = Scene.current.find(MilestoneTracker).score;
     Scene.change(GameOverScene, score);
 }
+
+globalThis.setup = setup;
+globalThis.draw = draw;
+globalThis.mouseClicked = mouseClicked;
