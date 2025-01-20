@@ -24,22 +24,29 @@ export const AudioManager = new class {
         voice = this.bgmVoices[voice];
         const funcs = [];
         let dt = 0;
-        for (const note of notes) {
-            let [pitch, duration] = note.split(" ");
-            if (!duration) {
-                duration = pitch;
-                pitch = false;
+        for (let iter = 0; iter < 2; iter++) {
+            for (const note of notes) {
+                let [pitch, duration] = note.split(" ");
+                if (!duration) {
+                    duration = pitch;
+                    pitch = false;
+                }
+                if (pitch) {
+                    const thisDt = dt;
+                    funcs.push(time => {
+                        voice.triggerAttackRelease(
+                            pitch, duration, time + thisDt
+                        );
+                    });
+                }
+                dt += new Tone.Time(duration).toSeconds();
             }
-            if (pitch) {
-                const thisDt = dt;
-                funcs.push(time => {
-                    voice.triggerAttackRelease(pitch, duration, time + thisDt);
-                });
-            }
-            dt += new Tone.Time(duration).toSeconds();
         }
-        this.bgmLoops[name] = new Tone.Loop(time => {
-            for (let func of funcs) func(time);
+        this.bgmLoops[name] = new Tone.Loop(async time => {
+            for (let func of funcs) {
+                func(time);
+                await new Promise(resolve => setTimeout(resolve, 1));
+            }
         }, dt);
         this.bgmLoops[name].start(startTime);
     }
@@ -56,6 +63,7 @@ export const AudioManager = new class {
 document.querySelector("#p5js-canvas").addEventListener("click", async () => {
     if (!AudioManager.ready) {
         await Tone.start();
+        Tone.setContext(new Tone.Context({latencyHint: "interactive"}));
         for (const name of ["click", "win", "gameover", "taunt", "shoot"]) {
             AudioManager.samples[name] =
                 new Tone.Player(`./snd/${name}.ogg`).toDestination();
@@ -87,7 +95,10 @@ document.querySelector("#p5js-canvas").addEventListener("click", async () => {
         for (let voice of Object.keys(AudioManager.bgmVoices)) {
             AudioManager.bgmVoices[voice].volume.value = -100;
         }
-        AudioManager.bgmVoiceSetLoop("membrane", "8n",
+        Tone.getTransport().bpm.value = 120;
+        Tone.getTransport().setLoopPoints(0, "16m");
+        Tone.getTransport().loop = true;
+        AudioManager.bgmVoiceSetLoop("membrane", 0,
             "A2 8n", "A2 8n", "A3 8n", "A2 8n",
             "A2 16t", "A2 16t", "A2 16t", "A2 16n", "A3 8n", "A3 8n", "A2 16n",
             "A2 8n", "A2 8n", "A3 8n",
@@ -99,7 +110,7 @@ document.querySelector("#p5js-canvas").addEventListener("click", async () => {
             "A2 16n", "A2 8n", "A2 8n", "A2 16n",
             "A3 16n", "A2 16n", "A3 16t", "A3 16t", "A3 16t",
         );
-        AudioManager.bgmVoiceSetLoop("square", "8n",
+        AudioManager.bgmVoiceSetLoop("square", 0,
             "A1 8n", "A2 8n",
             "A1 8n", "A2 8n",
             "A1 8n", "A2 8n",
@@ -168,7 +179,7 @@ document.querySelector("#p5js-canvas").addEventListener("click", async () => {
             "D#1 8n", "D#2 8n",
             "C1 8n", "A#1 8n",
         );
-        AudioManager.bgmVoiceSetLoop("sawtooth", "8n",
+        AudioManager.bgmVoiceSetLoop("sawtooth", 0,
             "G3 16n", "A3 16n", "A3 16n", "16n",
             "A3 16n", "16n", "G3 16n", "A3 16n",
             "4n", "16n",
@@ -255,7 +266,7 @@ document.querySelector("#p5js-canvas").addEventListener("click", async () => {
             "16n", "C3 16n", "8n",
             "A#2 16n", "16n", "C3 16n", "16n",
         );
-        AudioManager.bgmVoiceSetLoop("triangle", "8n",
+        AudioManager.bgmVoiceSetLoop("triangle", 0,
             "E4 16n", "8n", "G4 16n",
             "8n", "A4 16n", "16n",
             "16n", "E4 16n", "8n",
@@ -340,13 +351,12 @@ document.querySelector("#p5js-canvas").addEventListener("click", async () => {
             "D#6 16n", "E6 16t", "32t", "E6 16t", "32t", "E6 16t", "32t",
             "D6 16t", "D#6 16t", "E6 16t", "G6 16t", "G#6 16t", "A6 16t",
         );
-        Tone.getTransport().bpm.value = 120;
-        Tone.getTransport().start();
-        //AudioManager.bgmVoiceFadeIn("membrane", 0.02);
-        //AudioManager.bgmVoiceFadeIn("sawtooth", 0.02);
-        //AudioManager.bgmVoiceFadeIn("square", 0.02);
-        //AudioManager.bgmVoiceFadeIn("triangle", 0.02);
         await Tone.loaded();
+        Tone.getTransport().start("+1")
         AudioManager.ready = true;
+        //AudioManager.bgmVoiceFadeIn("membrane", "2m");
+        //AudioManager.bgmVoiceFadeIn("sawtooth", "2m");
+        //AudioManager.bgmVoiceFadeIn("square", "2m");
+        //AudioManager.bgmVoiceFadeIn("triangle", "2m");
     }
 });

@@ -1,0 +1,3 @@
+Mon, Jan 20 2025, 11:29:52am PST
+Fix lag in experiment 2 caused by audio loop problems
+The problem was that on each iteration of the overall bgm loop, I was synchronously scheduling a large amount of audio events *at* exactly the same time (which was still a problem even though they were scheduled *for* different times). I now schedule them asynchronously with a 1ms scheduling delay. In theory, this means I can't safely have a bgm track that starts with a note shorter than 1ms times the number of notes in the track. In practice, that's fine, I don't have any tracks like that anyway.
