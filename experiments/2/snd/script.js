@@ -6,9 +6,13 @@ export const AudioManager = new class {
         this.bgmLoops = {};
     }
     playSample(name) {
-        if (!this.ready) return;
-        this.samples[name].restart();
-        this.samples[name].start();
+        try {
+            if (!this.ready) return;
+            this.samples[name].restart();
+            this.samples[name].start();
+        } catch (err) {
+            console.error(err);
+        }
     }
     bgmVoiceFadeIn(voice, time) {
         voice = this.bgmVoices[voice];
