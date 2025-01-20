@@ -1,0 +1,3 @@
+Mon, Jan 20 2025, 11:52:31am PST
+Add explanatory note to experiment 5 to try to ensure players don't assume they've seen everything there is to see after only clicking the button once or twice
+Self-explanatory
