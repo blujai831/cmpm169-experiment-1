@@ -628,6 +628,7 @@ class GameOverScene extends Scene {
         this.spawn("foreground", Scoreboard, score);
         this.spawn("foreground", PlayAgainButton);
         AudioManager.playSample("gameover");
+        if (score > 30) AudioManager.bgmVoiceFadeIn("triangle", "2n");
     }
 }
 

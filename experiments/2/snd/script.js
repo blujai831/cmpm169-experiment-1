@@ -255,11 +255,97 @@ document.querySelector("#p5js-canvas").addEventListener("click", async () => {
             "16n", "C3 16n", "8n",
             "A#2 16n", "16n", "C3 16n", "16n",
         );
+        AudioManager.bgmVoiceSetLoop("triangle", "8n",
+            "E4 16n", "8n", "G4 16n",
+            "8n", "A4 16n", "16n",
+            "16n", "E4 16n", "8n",
+            "G4 16n", "16n", "A4 16t", "G#4 16t", "A4 16t",
+            //
+            "C5 16n", "16n", "D5 16n", "A4 16n",
+            "2n",
+            "8n", "G4 16n", "A4 16n",
+            //
+            "C5 16n", "16n", "D5 16n", "A4 16n",
+            "16n", "G4 16n", "A4 16n", "C5 16n",
+            "D5 16n", "8n", "E5 16n",
+            "8n", "G5 16t", "G#5 16t", "A5 16t",
+            //
+            "C6 16n", "B5 16n", "C6 16n", "16n",
+            "2n",
+            "8n", "G4 16n", "A4 16n",
+            //
+            // === === === === === === === ===
+            //
+            "C5 16n", "8n.",
+            "16n", "A4 16n", "G4 16t", "G#4 16t", "A4 16t",
+            "D5 16n", "8n.",
+            "16n", "A4 16n", "G4 16t", "G#4 16t", "A4 16t",
+            //
+            "E5 16n", "G5 16t", "G#5 16t", "A5 16t",
+            "C#5 32t", "D5 16t", "C5 16n", "D5 16n", "16n",
+            "8n.", "C5 16t", "C#5 16t", "D5 16t",
+            "E5 16n", "D#5 16n", "E5 16n", "D5 16n",
+            //
+            "C5 16n", "C#5 16n", "D5 16n", "A4 16n",
+            "8n", "G4 16t", "G#4 16t", "A4 16t",
+            "C5 16n", "C#5 16n", "D5 16n", "A4 16n",
+            "16n", "G4 16t", "G#4 16t", "A4 16t", "D5 16n",
+            //
+            "D#5 32t", "E5 16t", "D#5 16n", "E5 16n", "D5 16n",
+            "C#5 16n", "D5 16n", "C5 16n", "B4 16n",
+            "C5 16n", "16n", "D5 16n", "A4 16n",
+            "8n", "G4 16n", "16n",
+            //
+            // === === === === === === === ===
+            //
+            "A4 16n", "16n", "G4 16t", "G#4 16t", "A4 16t",
+            "C5 16n", "16n", "A#4 16t", "B4 16t", "C5 16t",
+            "D#5 32t", "E5 16t", "D#5 16n", "E5 16n", "D5 16n",
+            "C5 16n", "D#5 16t", "E5 16t", "A5 16t", "A#5 32n", "B5 32n",
+            //
+            "C6 8n", "A#5 32t", "B5 16t", "16n",
+            "G#5 32t", "A5 16t", "16n", "G5 16n", "16n",
+            "E5 16n", "16n", "G5 8t", "C5 32t", "C#5 32t",
+            "D5 8t", "C5 8t", "B4 16t", "G4 32t", "G#4 32t",
+            //
+            "A4 16n", "G4 16n", "A4 16n", "B4 32n", "C5 16n.",
+            "G#4 16n", "A4 16n", "D5 8n",
+            "G#4 16n", "A4 16n", "D5 16n",
+            "16n", "D#5 8n.",
+            //
+            "D5 32t", "E5 16t", "D#5 16n", "D5 16t", "32t", "C5 16t", "32t",
+            "G4 16n", "A4 16t", "32t", "D#5 32t", "E5 16t", "D#5 16n",
+            "D5 16t", "32t", "C5 16t", "32t", "G4 16n", "A4 16t", "32t",
+            "C5 16n", "16n", "D5 8n",
+            //
+            // === === === === === === === ===
+            //
+            "A4 16n", "G4 16n", "A4 16n", "B4 32n", "C5 16n.", // 5
+            "A#4 16t", "B4 16t", "C5 16t", "C#5 32n", "D5 16n.", // + 4
+            "C5 16t", "C#5 16t", "D5 16t", "E5 16n", // + 3
+            "F#5 32t", "G5 16t", "G#5 16t", "A5 16t", "C6 16t", // + 3
+            "D6 32t", "D#6 32t", "E6 32t", // + 1 = 16
+            //
+            "D6 32t", "D#6 32t", "E6 8t", "D6 16t", "D#6 16t", "E6 16t", // 4
+            "C6 32t", "C#6 16t", "32t", "D6 16t", "G#5 16n", "A5 16n", // 4
+            "D#5 32t", "E5 16t", "F#5 32t", "G5 16t", "A5 16n", // 3
+            "D#5 32t", "D5 8t", "B4 32t", "C5 8n", "B4 16n", // 5
+            //
+            "A4 8n.", "C5 8n", "B4 32n", "C5 32n", "D5 8n.", // 9
+            "D#5 8n.", "E5 16n", "16n", "G5 16t", "F#5 16t", "G5 16t", // 7
+            //
+            "D6 32t", "D#6 16t", "E6 16t", "32t",
+            "E6 16t", "32t", "E6 16t", "32t",
+            "D#6 16n", "E6 16t", "32t", "E6 16t", "32t", "E6 16t", "32t",
+            "D#6 16n", "E6 16t", "32t", "E6 16t", "32t", "E6 16t", "32t",
+            "D6 16t", "D#6 16t", "E6 16t", "G6 16t", "G#6 16t", "A6 16t",
+        );
         Tone.getTransport().bpm.value = 120;
         Tone.getTransport().start();
-        AudioManager.bgmVoiceFadeIn("membrane", "2n");
-        AudioManager.bgmVoiceFadeIn("sawtooth", "2n");
-        AudioManager.bgmVoiceFadeIn("square", "2n");
+        //AudioManager.bgmVoiceFadeIn("membrane", 0.02);
+        //AudioManager.bgmVoiceFadeIn("sawtooth", 0.02);
+        //AudioManager.bgmVoiceFadeIn("square", 0.02);
+        //AudioManager.bgmVoiceFadeIn("triangle", 0.02);
         await Tone.loaded();
         AudioManager.ready = true;
     }
