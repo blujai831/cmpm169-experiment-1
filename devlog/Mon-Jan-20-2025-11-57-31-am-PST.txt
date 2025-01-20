@@ -1,0 +1,3 @@
+Mon, Jan 20 2025, 11:57:31am PST
+Further clarify experiment 2 instructions
+In my previous commit, I didn't specify how to tell if you've successfully clicked the button, and I didn't specify that you have to actually *die* after getting 7 buttons on screen at once because then the last music track kicks in. In this commit I've fixed both these issues.
