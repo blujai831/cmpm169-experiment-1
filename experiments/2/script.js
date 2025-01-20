@@ -587,6 +587,14 @@ class MainScene extends Scene {
     constructor() {
         super("background", "foreground");
         this.spawn("background", MilestoneTracker, {
+            firstWin: {
+                condition: () => !!this.find(actor => (
+                    actor instanceof RunawayButton && actor.isTired()
+                )),
+                action: () => {
+                    AudioManager.bgmVoiceFadeIn("membrane", "2n");
+                }
+            },
             buttonsCanShoot: {
                 condition: () => !!this.find(actor => (
                     actor instanceof RunawayButton && actor.couldShoot()
@@ -594,7 +602,8 @@ class MainScene extends Scene {
                 action: () => {
                     this.spawn("background", RainbowFadeBackground);
                     this.spawn("background", ScrollingMessage,
-                        "Oh yeah!? Two can play at that game!!")
+                        "Oh yeah!? Two can play at that game!!");
+                    AudioManager.bgmVoiceFadeIn("square", "2n");
                 }
             },
             rampUp: {
@@ -605,6 +614,7 @@ class MainScene extends Scene {
                         "You think you're good enough to click me!? " +
                         "I'll show you clicking " +
                         "like you've never even SEEN!!");
+                    AudioManager.bgmVoiceFadeIn("sawtooth", "2n");
                 }
             }
         });
