@@ -637,7 +637,6 @@ function draw() {
 }
 
 function mouseClicked() {
-    console.log("HELP ME");
     Scene.current.doClick();
 }
 

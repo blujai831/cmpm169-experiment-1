@@ -5,16 +5,19 @@ export const AudioManager = new class {
     }
     playSample(name) {
         if (!this.ready) return;
+        this.samples[name].restart();
         this.samples[name].start();
     }
 };
 
 document.querySelector("#p5js-canvas").addEventListener("click", async () => {
-    await Tone.start();
-    for (const name of ["click", "win", "gameover", "taunt", "shoot"]) {
-        AudioManager.samples[name] =
-            new Tone.Player(`./snd/${name}.ogg`).toDestination();
+    if (!AudioManager.ready) {
+        await Tone.start();
+        for (const name of ["click", "win", "gameover", "taunt", "shoot"]) {
+            AudioManager.samples[name] =
+                new Tone.Player(`./snd/${name}.ogg`).toDestination();
+        }
+        await Tone.loaded();
+        AudioManager.ready = true;
     }
-    await Tone.loaded();
-    AudioManager.ready = true;
 });
