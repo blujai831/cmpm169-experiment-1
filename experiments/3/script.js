@@ -65,7 +65,7 @@ class Clock {
         return this.totalMonths%12;
     }
     get season() {
-        return ((this.totalMonths + 1)/3)%4;
+        return ((this.totalMonths + 1/2)/3)%4;
     }
     seasonLerp(lerpFunc, wi, sp, su, fa) {
         const w = this.season;
@@ -570,17 +570,80 @@ Tree.Flower = class extends Tree.AbstractLeaf {
     }
 };
 
-let clock, sky, tree;
+class Stars {
+    constructor() {
+        this.stars = [];
+        for (let n = 0; n < 200; n++) {
+            this.stars.push({
+                r: Math.random()*WIDTH*Math.sqrt(3/2),
+                theta: 2*Math.PI*Math.random(),
+                rSelf: lerp(1, 5/2, Math.random()),
+                alpha: lerp(0.5, 1, Math.random()),
+                speed: lerp(1/10000, 3/10000, Math.random())
+            });
+        }
+    }
+    draw() {
+        noStroke();
+        for (const star of this.stars) {
+            fill(255, 255, 255,
+                255*star.alpha*Math.pow(clock.proximityToNight, 3));
+            circle(
+                WIDTH/2 + star.r*Math.cos(star.theta),
+                WIDTH + star.r*Math.sin(star.theta),
+                2*star.rSelf
+            );
+            star.theta += star.speed*deltaTime;
+        }
+        noFill();
+    }
+}
+
+class Sun {
+    constructor() {
+        this.r = WIDTH;
+        this.rSelf = 32;
+    }
+    draw() {
+        noStroke();
+        fill("white");
+        const theta = clock.timeOfDay*Math.PI/12 + Math.PI/2;
+        circle(
+            WIDTH/2 + this.r*Math.cos(theta),
+            WIDTH + this.r*Math.sin(theta),
+            2*this.rSelf
+        );
+        noFill();
+    }
+}
+
+class Weather {
+    draw() {}
+}
+
+class Clouds {
+    draw() {}
+}
+
+let sky, stars, sun, tree, weather, clouds, clock;
 
 globalThis.setup = function () {
     createCanvas(WIDTH, WIDTH, document.querySelector("#p5js-canvas"));
-    clock = new Clock();
     sky = new Sky();
+    stars = new Stars();
+    sun = new Sun();
     tree = new Tree();
+    weather = new Weather();
+    clouds = new Clouds();
+    clock = new Clock();
 }
 
 globalThis.draw = function () {
     sky.draw();
+    stars.draw();
+    sun.draw();
     tree.draw();
+    weather.draw();
+    clouds.draw();
     clock.draw();
 }
