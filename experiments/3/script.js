@@ -271,10 +271,22 @@ class Tree {
 }
 
 Tree.Branch = class {
+    constrainAngleUpward(theta) {
+        while (theta > 0) theta -= 2*Math.PI;
+        while (theta < -Math.PI) theta += 2*Math.PI;
+        if (theta > 0) {
+            if (theta > Math.PI - theta) {
+                theta = -Math.PI;
+            } else {
+                theta = 0;
+            }
+        }
+        return theta;
+    }
     constructor(options) {
         this.length = [{
             x: options.x, y: options.y,
-            theta: constrain(options.theta, -Math.PI, 0)
+            theta: this.constrainAngleUpward(options.theta)
         }];
         this.width = options.width;
         this.alive = true;
@@ -710,7 +722,6 @@ class Clouds {
                 y: lerp(-cloudWidth/4, cloudWidth/4, Math.random()),
                 width: lerp(cloudWidth/2, cloudWidth*3/4, Math.random())
             });
-            console.log("help");
         }
         this.clouds.push(cloud);
     }
