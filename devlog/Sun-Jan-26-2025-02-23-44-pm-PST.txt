@@ -1,0 +1,3 @@
+Sun, Jan 26 2025, 02:23:44pm PST
+Add interactivity to experiment 3 in the form of a grow mode and a prune mode
+In grow mode, you can click and drag anywhere and the tree will try to grow in that direction. Manually growing the tree does not make it any less likely to die while it's trying to grow, which is still dependent on season. In prune mode, any branch you click and drag over will die, along with any of its descendant branches.

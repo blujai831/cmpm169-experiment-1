@@ -330,6 +330,7 @@ Tree.Branch = class {
         });
     }
     die() {
+        for (const branch of this.branches) branch.die();
         this.alive = false;
     }
     shrink() {
@@ -345,10 +346,16 @@ Tree.Branch = class {
         const numBranches = Math.round(lerp(2, 4, Math.random()));
         for (let n = numBranches; n > 0; n--) {
             if (tree.partCount < tree.partLimit) {
+                let theta = this.head.theta;
+                if (ui.mode == "grow" && mouseIsPressed) {
+                    theta = Math.atan2(
+                        mouseY - this.head.y,
+                        mouseX - this.head.x
+                    );
+                }
                 this.branches.push(new Tree.Branch({
                     x: this.head.x, y: this.head.y,
-                    theta: this.head.theta +
-                        lerp(-1, 1, Math.random())*this.branchArc/2,
+                    theta: theta + lerp(-1, 1, Math.random())*this.branchArc/2,
                     width: this.width*shrinkFactor,
                     growthRate: this.growthRate*shrinkFactor,
                     turnRadius: this.turnRadius*shrinkFactor,
@@ -394,9 +401,21 @@ Tree.Branch = class {
         const countBeforePrune = this.branches.length;
         filterInPlace(this.branches, branch => !branch.gone);
         tree.partCount -= countBeforePrune - this.branches.length;
+        if (ui.mode == "prune" && mouseIsPressed) {
+            for (const segment of this.length) {
+                if (
+                    dist(mouseX, mouseY, segment.x, segment.y) <=
+                    this.width
+                ) {
+                    this.die();
+                }
+            }
+        }
         if (this.branches.length <= 0) {
             if (this.alive) {
-                if (Math.random() <= this.deathProbability && this.parent) {
+                if (
+                    Math.random() <= this.deathProbability && this.parent
+                ) {
                     this.die();
                 } else if (
                     this.width >= 4 &&
@@ -415,14 +434,22 @@ Tree.Branch = class {
                     this.sproutLeaf();
                 } else if (this.length.length < tree.lengthLimit) {
                     this.grow();
+                } else if (
+                    this.width >= 4 &&
+                    ui.mode == "grow" && mouseIsPressed
+                ) {
+                    this.branch();
                 } else if (this.parent) {
                     this.die();
                 }
+            } else if (this.length.length <= 1 && !this.parent) {
+                this.alive = true;
             } else {
                 this.shrink();
             }
         } else if (this.branches.length < 4) {
             if (
+                this.alive &&
                 this.width >= 4 &&
                 Math.random() <= this.branchProbability
             ) {
@@ -748,7 +775,44 @@ class Clouds {
     }
 }
 
-let sky, stars, sun, tree, weather, clouds, clock;
+class UI {
+    constructor() {
+        this.mode = "grow";
+        const buttons = document.createElement("fieldset");
+        document.querySelector("main").appendChild(buttons);
+        buttons.id = "sketch-ui-buttons";
+        const growButton = document.createElement("button");
+        buttons.appendChild(growButton);
+        growButton.id = "grow-button";
+        growButton.innerText = "Grow mode";
+        const pruneButton = document.createElement("button");
+        buttons.appendChild(pruneButton);
+        pruneButton.id = "prune-button";
+        pruneButton.innerText = "Prune mode";
+        growButton.addEventListener("click", () => {
+            this.mode = "grow";
+            growButton.disabled = true;
+            pruneButton.disabled = false;
+        });
+        pruneButton.addEventListener("click", () => {
+            this.mode = "prune";
+            growButton.disabled = false;
+            pruneButton.disabled = true;
+        });
+        growButton.disabled = true;
+    }
+    draw() {
+        if (this.mode == "grow") {
+            stroke("green");
+        } else {
+            stroke("red");
+        }
+        strokeWeight(3);
+        circle(mouseX, mouseY, 6);
+    }
+}
+
+let sky, stars, sun, tree, weather, clouds, clock, ui;
 
 globalThis.setup = function () {
     createCanvas(WIDTH, WIDTH, document.querySelector("#p5js-canvas"));
@@ -759,6 +823,7 @@ globalThis.setup = function () {
     weather = new Weather();
     clouds = new Clouds();
     clock = new Clock();
+    ui = new UI();
 }
 
 globalThis.draw = function () {
@@ -769,4 +834,5 @@ globalThis.draw = function () {
     weather.draw();
     clouds.draw();
     clock.draw();
+    ui.draw();
 }
