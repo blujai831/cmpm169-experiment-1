@@ -582,7 +582,7 @@ Tree.Flower = class extends Tree.AbstractLeaf {
 class Stars {
     constructor() {
         this.stars = [];
-        for (let n = 0; n < 200; n++) {
+        for (let n = 0; n < 100; n++) {
             this.stars.push({
                 r: Math.random()*WIDTH*Math.sqrt(3/2),
                 theta: 2*Math.PI*Math.random(),
@@ -646,7 +646,7 @@ class Weather {
         }
         if (
             this.active &&
-            this.raindrops.length + this.snowflakes.length < 600
+            this.raindrops.length + this.snowflakes.length < 100
         ) {
             const particle = {
                 x: 2*Math.random()*WIDTH - WIDTH/2,
@@ -703,7 +703,7 @@ class Clouds {
             plumes: [],
             speed: lerp(1/10, 3/10, Math.random())
         };
-        for (let i = Math.round(lerp(8, 16, Math.random())); i > 0; i--) {
+        for (let i = Math.round(lerp(4, 8, Math.random())); i > 0; i--) {
             cloud.plumes.push({
                 x: lerp(-cloudWidth/2, cloudWidth/2, Math.random()),
                 y: lerp(-cloudWidth/4, cloudWidth/4, Math.random()),
@@ -716,7 +716,7 @@ class Clouds {
     draw() {
         if (
             Math.random() <= this.cloudProbability &&
-            this.clouds.length < 128
+            this.clouds.length < 50
         ) {
             this.spawnCloud();
         }
