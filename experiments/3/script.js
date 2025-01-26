@@ -138,6 +138,7 @@ class Sky {
         this.dayColorFall = hsb(1/2, 1/6, 5/6);
         this.twilightColorFall = hsb(1/12, 1, 2/3);
         this.nightColorFall = hsb(7/12, 1, 1/8);
+        this.overcastColor = hsb(0, 0, 3/4);
     }
     get dayColor() {
         return clock.seasonLerp(
@@ -167,10 +168,10 @@ class Sky {
         );
     }
     get topColor() {
-        return lerpColor(
+        return lerpColor(lerpColor(
             this.dayColor, this.nightColor,
             clock.proximityToNight
-        );
+        ), this.overcastColor, 1 - Math.pow(9/10, clouds.clouds.length));
     }
     get bottomColor() {
         return lerpColor(
