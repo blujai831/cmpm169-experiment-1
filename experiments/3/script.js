@@ -335,8 +335,7 @@ Tree.Branch = class {
                 this.branches.push(new Tree.Branch({
                     x: this.head.x, y: this.head.y,
                     theta: this.head.theta +
-                        lerp(-1, 1, (n - 1)/(numBranches - 1)) *
-                        this.branchArc/2,
+                        lerp(-1, 1, Math.random())*this.branchArc/2,
                     width: this.width*shrinkFactor,
                     growthRate: this.growthRate*shrinkFactor,
                     turnRadius: this.turnRadius*shrinkFactor,
