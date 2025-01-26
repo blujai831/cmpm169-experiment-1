@@ -1,0 +1,3 @@
+Sun, Jan 26 2025, 11:43:54am PST
+Reduce darkening on tree colors in experiment 3
+The tree's colors are darkened relative to the ones specified, so that the tree will stand out against the sky. I decided the tree was being darkened too much and you couldn't really tell what the original colors were, so I reduced the darkening

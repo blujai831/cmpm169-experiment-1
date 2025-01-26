@@ -424,7 +424,7 @@ Tree.Branch = class {
                 this.colorVariation
             ),
             color(0),
-            0.5
+            0.25
         ));
     }
     drawSelf() {
@@ -485,7 +485,7 @@ Tree.AbstractLeaf = class {
         return sky.illuminate(lerpColor(
             lerpColor(this.colorA, this.colorB, this.colorVariation),
             color(0),
-            0.5
+            0.25
         ));
     }
     draw() {
