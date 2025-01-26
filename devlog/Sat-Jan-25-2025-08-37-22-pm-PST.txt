@@ -1,0 +1,3 @@
+Sat, Jan 25 2025, 08:37:22pm PST
+In experiment 3, add semi-realistic sky that changes with time of day
+It consults a clock instance to interpolate between three colors: one for the daytime sky, one for the night sky, and one for the evening horizon.
