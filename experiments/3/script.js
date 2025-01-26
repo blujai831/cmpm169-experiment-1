@@ -622,7 +622,52 @@ class Weather {
 }
 
 class Clouds {
-    draw() {}
+    constructor() {
+        this.clouds = [];
+    }
+    get cloudProbability() {
+        return clock.seasonLerp(lerp, 0.02, 0.005, 0.01, 0.05);
+    }
+    spawnCloud() {
+        const cloudWidth = lerp(192, 384, Math.random());
+        const cloud = {
+            x: -2*cloudWidth,
+            y: lerp(0, WIDTH/2, Math.random()),
+            width: cloudWidth,
+            plumes: [],
+            speed: lerp(1/10, 3/10, Math.random())
+        };
+        for (let i = Math.round(lerp(8, 16, Math.random())); i > 0; i--) {
+            cloud.plumes.push({
+                x: lerp(-cloudWidth/2, cloudWidth/2, Math.random()),
+                y: lerp(-cloudWidth/4, cloudWidth/4, Math.random()),
+                width: lerp(cloudWidth/2, cloudWidth*3/4, Math.random())
+            });
+            console.log("help");
+        }
+        this.clouds.push(cloud);
+    }
+    draw() {
+        if (
+            Math.random() <= this.cloudProbability &&
+            this.clouds.length < 128
+        ) {
+            this.spawnCloud();
+        }
+        noStroke();
+        fill(192, 192, 192, 32);
+        for (const cloud of this.clouds) {
+            for (const plume of cloud.plumes) {
+                ellipse(
+                    cloud.x + plume.x, cloud.y + plume.y,
+                    plume.width, plume.width/2
+                );
+            }
+            cloud.x += cloud.speed*deltaTime;
+        }
+        noFill();
+        filterInPlace(this.clouds, cloud => cloud.x < WIDTH + 2*cloud.width);
+    }
 }
 
 let sky, stars, sun, tree, weather, clouds, clock;
