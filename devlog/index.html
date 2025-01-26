@@ -10,6 +10,7 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Sun-Jan-26-2025-09-26-45-am-PST">Sun, Jan 26 2025, 09:26:45am PST&mdash;Slightly adjust month offset of seasons in experiment 3</a></li>
     <li><a href="#Sun-Jan-26-2025-09-11-15-am-PST">Sun, Jan 26 2025, 09:11:15am PST&mdash;In experiment 3, add a tree that grows and dies at variable rates changing with the season, and a calendar showing what day it is in the simulation.</a></li>
     <li><a href="#Sat-Jan-25-2025-08-37-22-pm-PST">Sat, Jan 25 2025, 08:37:22pm PST&mdash;In experiment 3, add semi-realistic sky that changes with time of day</a></li>
     <li><a href="#Sat-Jan-25-2025-07-28-37-pm-PST">Sat, Jan 25 2025, 07:28:37pm PST&mdash;Create page for experiment 3</a></li>
@@ -63,6 +64,12 @@
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Sun-Jan-26-2025-09-26-45-am-PST">
+    <h2>Sun, Jan 26 2025, 09:26:45am PST&mdash;Slightly adjust month offset of seasons in experiment 3</h2>
+    <a href="Sun-Jan-26-2025-09-26-45-am-PST.png"><img src="Sun-Jan-26-2025-09-26-45-am-PST.png" alt="Slightly adjust month offset of seasons in experiment 3" /></a>
+    <p>Adding 1/2 to the month instead of 1 to calculate the current season better aligns the numbers to my code's expectation that the exact index number of each season refers to its middle, not its beginning (e.g. since winter's integer index is 0, a floating-point season value of 0.0 refers to the middle of winter, not the beginning of winter).</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Sun-Jan-26-2025-09-11-15-am-PST">
     <h2>Sun, Jan 26 2025, 09:11:15am PST&mdash;In experiment 3, add a tree that grows and dies at variable rates changing with the season, and a calendar showing what day it is in the simulation.</h2>
     <a href="Sun-Jan-26-2025-09-11-15-am-PST.png"><img src="Sun-Jan-26-2025-09-11-15-am-PST.png" alt="In experiment 3, add a tree that grows and dies at variable rates changing with the season, and a calendar showing what day it is in the simulation." /></a>
