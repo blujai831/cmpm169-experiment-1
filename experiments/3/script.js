@@ -291,7 +291,12 @@ Tree.Branch = class {
         return clock.seasonLerp(lerp, 0, 0.02, 0.03, 0.01);
     }
     get deathProbability() {
-        return clock.seasonLerp(lerp, 0.027, 0, 0.009, 0.018);
+        const base = clock.seasonLerp(lerp, 0.027, 0, 0.009, 0.018);
+        if (weather.active) {
+            return base*clock.seasonLerp(lerp, 6, 1/6, 1/6, 1/6);
+        } else {
+            return base;
+        }
     }
     get leafProbability() {
         return clock.seasonLerp(lerp, 0, 0.03, 0.02, 0.01);
@@ -457,7 +462,12 @@ Tree.AbstractLeaf = class {
         return clock.seasonLerp(lerp, 0, 0.003, 0.002, 0.001);
     }
     get deathProbability() {
-        return clock.seasonLerp(lerp, 0.003, 0, 0.001, 0.002);
+        const base = clock.seasonLerp(lerp, 0.003, 0, 0.001, 0.002);
+        if (weather.active) {
+            return base*clock.seasonLerp(lerp, 6, 1/6, 1/6, 1/6);
+        } else {
+            return base;
+        }
     }
     grow() {
         this.size += this.growthRate*deltaTime;
@@ -618,7 +628,64 @@ class Sun {
 }
 
 class Weather {
-    draw() {}
+    constructor() {
+        this.raindrops = [];
+        this.snowflakes = [];
+        this.active = false;
+    }
+    get startProbability() {
+        return 1 - Math.pow(9994/10000, clouds.clouds.length + 1);
+    }
+    get endProbability() {
+        return Math.pow(2/5, clouds.clouds.length + 1);
+    }
+    draw() {
+        if (this.active && Math.random() <= this.endProbability) {
+            this.active = false;
+        } else if (!this.active && Math.random() <= this.startProbability) {
+            this.active = true;
+        }
+        if (
+            this.active &&
+            this.raindrops.length + this.snowflakes.length < 600
+        ) {
+            const particle = {
+                x: 2*Math.random()*WIDTH - WIDTH/2,
+                y: -16,
+                size: lerp(2, 8, Math.random()),
+                alpha: lerp(1/3, 1, Math.random()),
+                speed: lerp(1, 2, Math.random()),
+                theta: Math.PI/2
+            };
+            if (Math.round(clock.season)%4 == 0) {
+                this.snowflakes.push(particle);
+            } else {
+                this.raindrops.push(particle);
+            }
+        }
+        for (const particle of this.raindrops) {
+            stroke(0, 64, 128, 255*particle.alpha);
+            strokeWeight(particle.size);
+            line(particle.x, particle.y, particle.x + 4, particle.y + 8);
+            particle.x += particle.speed*deltaTime/2;
+            particle.y += particle.speed*deltaTime;
+        }
+        filterInPlace(this.raindrops, particle => particle.y < WIDTH);
+        for (const particle of this.snowflakes) {
+            stroke(192, 255, 255, 255);
+            strokeWeight(2);
+            circle(particle.x, particle.y, particle.size);
+            particle.x +=
+                Math.cos(particle.theta)*particle.speed*deltaTime/12;
+            particle.y +=
+                Math.sin(particle.theta)*particle.speed*deltaTime/12;
+            particle.theta = constrain(
+                particle.theta + lerp(-1/2, 1/2, Math.random()),
+                0, Math.PI
+            );
+        }
+        filterInPlace(this.snowflakes, particle => particle.y < WIDTH);
+    }
 }
 
 class Clouds {
