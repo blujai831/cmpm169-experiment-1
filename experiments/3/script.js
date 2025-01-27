@@ -226,7 +226,7 @@ class Tree {
             width: 32
         });
         this.lengthLimit = 32;
-        this.partLimit = 500;
+        this.partLimit = 300;
         this.partCount = 0;
     }
     get woodColorA() {
@@ -510,9 +510,7 @@ Tree.AbstractLeaf = class {
             return base;
         }
     }
-    sproutNextStage() {
-        // doesn't have one by default
-    }
+    sproutNextStage() {}
     grow() {
         this.size += this.growthRate*deltaTime;
         this.growthRate /= 2;
@@ -733,7 +731,7 @@ class Weather {
         }
         if (
             this.active &&
-            this.raindrops.length + this.snowflakes.length < 100
+            this.raindrops.length + this.snowflakes.length < 60
         ) {
             const particle = {
                 x: 2*Math.random()*WIDTH - WIDTH/2,
@@ -802,7 +800,7 @@ class Clouds {
     draw() {
         if (
             Math.random() <= this.cloudProbability &&
-            this.clouds.length < 50
+            this.clouds.length < 30
         ) {
             this.spawnCloud();
         }

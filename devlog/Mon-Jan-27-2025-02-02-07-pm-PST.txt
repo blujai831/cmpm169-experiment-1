@@ -1,0 +1,3 @@
+Mon, Jan 27 2025, 02:02:07pm PST
+Reduce object count to accommodate less powerful machines
+My laptop borders on kind of chugging trying to run this and my laptop is a gaming laptop. When designing for performance I need to bear in mind that the machine I'm developing on is not a good benchmark.
