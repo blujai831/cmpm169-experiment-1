@@ -500,7 +500,7 @@ Tree.AbstractLeaf = class {
         return this.baseWidth*this.size/(30*this.originalGrowthRate);
     }
     get nextStageProbability() {
-        return clock.seasonLerp(lerp, 0, 0.003, 0.002, 0.001);
+        return clock.seasonLerp(lerp, 0, 0.003, 0.005, 0.001);
     }
     get deathProbability() {
         const base = clock.seasonLerp(lerp, 0.003, 0, 0.001, 0.002);
@@ -510,11 +510,15 @@ Tree.AbstractLeaf = class {
             return base;
         }
     }
+    sproutNextStage() {
+        // doesn't have one by default
+    }
     grow() {
         this.size += this.growthRate*deltaTime;
         this.growthRate /= 2;
     }
     die() {
+        if (this.child) this.child.die();
         this.alive = false;
     }
     shrink() {
@@ -563,10 +567,6 @@ Tree.Leaf = class extends Tree.AbstractLeaf {
     get colorB() {
         return tree.leafColorB;
     }
-    sproutNextStage() {
-        // doesn't have one
-        this.grow();
-    }
     drawSelf() {
         stroke(this.color);
         strokeWeight(this.width);
@@ -602,7 +602,12 @@ Tree.Flower = class extends Tree.AbstractLeaf {
         );
     }
     sproutNextStage() {
-        // todo
+        this.child = new Tree.Fruit({
+            x: this.x, y: this.y,
+            width: lerp(this.width, this.width*3/2, Math.random()),
+            growthRate: this.originalGrowthRate/512,
+            parent: this
+        });
     }
     drawSelf() {
         stroke(this.color);
@@ -618,6 +623,46 @@ Tree.Flower = class extends Tree.AbstractLeaf {
                 this.y + this.size*Math.sin(this.theta + theta)/2
             );
         }
+    }
+};
+
+Tree.Fruit = class extends Tree.AbstractLeaf {
+    get colorA() {
+        return clock.seasonLerp(
+            lerpColor,
+            color(96, 48, 48, 0),
+            tree.fruitColorA,
+            tree.fruitColorB,
+            color(96, 48, 48, 0)
+        );
+    }
+    get colorB() {
+        return clock.seasonLerp(
+            lerpColor,
+            color(96, 48, 48, 192),
+            tree.fruitColorB,
+            tree.fruitColorA,
+            color(96, 48, 48, 192)
+        );
+    }
+    drawSelf() {
+        noStroke();
+        fill(this.color);
+        circle(this.x, this.y + this.size, 2*this.size);
+        noFill();
+    }
+    grow() {
+        this.size += this.growthRate*deltaTime;
+    }
+    shrink() {
+        this.y += deltaTime/3;
+    }
+    get gone() {
+        return !this.alive && this.y > WIDTH + this.size;
+    }
+    get deathProbability() {
+        return clock.seasonLerp(lerp, 0.01, 0, 0.005, 0.007) *
+            this.size/this.baseWidth;
     }
 };
 
