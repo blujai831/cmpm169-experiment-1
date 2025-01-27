@@ -367,28 +367,22 @@ Tree.Branch = class {
         }
     }
     sproutLeaf() {
-        if (tree.partCount < tree.partLimit) {
-            this.branches.push(new Tree.Leaf({
-                x: this.head.x, y: this.head.y,
-                theta: this.head.theta,
-                width: 2*this.width,
-                growthRate: 8*this.growthRate,
-                parent: this
-            }));
-            tree.partCount++;
-        }
+        this.branches.push(new Tree.Leaf({
+            x: this.head.x, y: this.head.y,
+            theta: this.head.theta,
+            width: 2*this.width,
+            growthRate: 8*this.growthRate,
+            parent: this
+        }));
     }
     flower() {
-        if (tree.partCount < tree.partLimit) {
-            this.branches.push(new Tree.Flower({
-                x: this.head.x, y: this.head.y,
-                theta: this.head.theta,
-                width: this.width,
-                growthRate: 8*this.growthRate,
-                parent: this
-            }));
-            tree.partCount++;
-        }
+        this.branches.push(new Tree.Flower({
+            x: this.head.x, y: this.head.y,
+            theta: this.head.theta,
+            width: this.width,
+            growthRate: 8*this.growthRate,
+            parent: this
+        }));
     }
     draw() {
         this.update();
@@ -399,8 +393,16 @@ Tree.Branch = class {
     }
     update() {
         const countBeforePrune = this.branches.length;
-        filterInPlace(this.branches, branch => !branch.gone);
-        tree.partCount -= countBeforePrune - this.branches.length;
+        filterInPlace(this.branches, branch => {
+            if (branch.gone) {
+                if (!(branch instanceof Tree.AbstractLeaf)) {
+                    tree.partCount--;
+                }
+                return false;
+            } else {
+                return true;
+            }
+        });
         if (ui.mode == "prune" && mouseIsPressed) {
             for (const segment of this.length) {
                 if (
