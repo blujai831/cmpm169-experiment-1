@@ -10,6 +10,7 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Sun-Jan-26-2025-09-09-47-pm-PST">Sun, Jan 26 2025, 09:09:47pm PST&mdash;Add explanation of why I'm not using noise functions. Move UI panel above the canvas to keep it closer to the canvas after adding said paragraph.</a></li>
     <li><a href="#Sun-Jan-26-2025-08-30-39-pm-PST">Sun, Jan 26 2025, 08:30:39pm PST&mdash;In experiment 3, implement fruit.</a></li>
     <li><a href="#Sun-Jan-26-2025-06-44-22-pm-PST">Sun, Jan 26 2025, 06:44:22pm PST&mdash;Add note to experiment 3 requesting the visitor wait until diegetic February before dismissing the simulation.</a></li>
     <li><a href="#Sun-Jan-26-2025-06-14-25-pm-PST">Sun, Jan 26 2025, 06:14:25pm PST&mdash;Reflect on my work on experiment 3</a></li>
@@ -78,6 +79,12 @@
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Sun-Jan-26-2025-09-09-47-pm-PST">
+    <h2>Sun, Jan 26 2025, 09:09:47pm PST&mdash;Add explanation of why I'm not using noise functions. Move UI panel above the canvas to keep it closer to the canvas after adding said paragraph.</h2>
+    <a href="Sun-Jan-26-2025-09-09-47-pm-PST.png"><img src="Sun-Jan-26-2025-09-09-47-pm-PST.png" alt="Add explanation of why I'm not using noise functions. Move UI panel above the canvas to keep it closer to the canvas after adding said paragraph." /></a>
+    <p>Note that I understand noise, but intentionally did not use it because I felt uniform randomness was better suited to my purposes. Noise is similar to pseudorandom generation, except intentionally more uniform—but still less uniform than a non-chaotic function—so that its outcomes are highly varied, but also feel "natural" in some way. That is to say, when you use a prewritten noise function, the small but evident correlation of samples between one another is an intrinsic part of what makes the data "noise," and, as such, is the responsibility of that function's implementation—meaning you are at the mercy of the function to give you samples that are already correlated in the specific way you want them correlated. Now, I could just use the type of noise that's correct for my use case, so that I could know the noise function would give me the sort of distribution I want, but I argue that would inherently be a slightly less creative and artistic process than trying to map uniform pseudorandom numbers onto my naive understanding of that distribution, so the latter is what I've chosen to do. To elaborate, if I use prepackaged noise to generate my simulated tree, then I'm generating the definitive simulated tree as defined by that noise function, but to maximize transformativity, I should really be trying to generate my idea of a simulated tree, that follows my weird, made-up, probably incorrect rules.</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Sun-Jan-26-2025-08-30-39-pm-PST">
     <h2>Sun, Jan 26 2025, 08:30:39pm PST&mdash;In experiment 3, implement fruit.</h2>
     <a href="Sun-Jan-26-2025-08-30-39-pm-PST.png"><img src="Sun-Jan-26-2025-08-30-39-pm-PST.png" alt="In experiment 3, implement fruit." /></a>

@@ -826,7 +826,9 @@ class UI {
     constructor() {
         this.mode = "grow";
         const buttons = document.createElement("fieldset");
-        document.querySelector("main").appendChild(buttons);
+        document.querySelector("main").insertBefore(
+            buttons, document.querySelector("#p5js-canvas")
+        );
         buttons.id = "sketch-ui-buttons";
         const growButton = document.createElement("button");
         buttons.appendChild(growButton);

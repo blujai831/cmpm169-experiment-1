@@ -37,6 +37,29 @@ so if you're interested in seeing the full spectrum of palette swaps,
 you'll have to wait the full diegetic year, which takes roughly 18 minutes
 and 15 seconds total, though I certainly wouldn't blame you
 if you don't have time for that.</p>
+<p>Note that I understand noise, but intentionally did not use it
+because I felt uniform randomness was better suited to my purposes.
+Noise is similar to pseudorandom generation, except intentionally
+more uniform&mdash;but still less uniform
+than a non-chaotic function&mdash;so that its outcomes are highly varied,
+but also feel "natural" in some way. That is to say, when you use
+a prewritten noise function, the small but evident correlation of samples
+between one another is an intrinsic part of what makes the data "noise," and,
+as such, is the responsibility of that function's implementation&mdash;meaning
+you are <em>at the mercy</em> of the function to give you samples
+that are <em>already</em> correlated in the specific way
+you want them correlated. Now, I <em>could</em> just use the type of noise
+that's correct for my use case, so that I could <em>know</em>
+the noise function would give me the sort of distribution I want,
+but I argue that would inherently be a slightly less creative
+and artistic process than trying to map uniform pseudorandom numbers
+onto my naive understanding of that distribution, so the latter
+is what I've chosen to do. To elaborate, if I use prepackaged noise
+to generate my simulated tree, then I'm generating the <em>definitive</em>
+simulated tree as defined by that noise function, but to maximize
+transformativity, I should really be trying to generate <em>my</em> idea
+of a simulated tree, that follows <em>my</em> weird, made-up,
+probably incorrect rules.</p>
 </main>
 </body>
 </html>
