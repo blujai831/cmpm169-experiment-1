@@ -178,16 +178,43 @@ Experiment4.Wave = class {
         this.app = app;
         this.pitch = app.cursorHue;
         this.clock = this.app.period;
+        this.ripples = [];
+        this.timers = [];
+    }
+    async wait(n) {
+        await new Promise(resolve => this.timers.push(deltaTime => {
+            n -= deltaTime;
+            if (n <= 0) {
+                resolve();
+                return true;
+            } else {
+                return false;
+            }
+        }));
     }
     draw() {}
     update(deltaTime) {
-        this.clock += deltaTime;
-        if (this.clock > this.app.period) {
+        if (this.clock >= this.app.period) {
             this.clock %= this.app.period;
             this.fire();
         }
+        this.updateRipples(deltaTime);
+        this.updateTimers(deltaTime);
+        this.clock += deltaTime;
     }
-    fire() {
+    updateRipples(deltaTime) {}
+    updateTimers(deltaTime) {
+        for (let i = this.timers.length - 1; i >= 0; i--) {
+            if (this.timers[i](deltaTime)) {
+                this.timers.splice(i, 1);
+            }
+        }
+    }
+    async fire() {
         this.app.voicePool.play(this.pitch/30);
+        await this.wait(500);
+        this.app.voicePool.play(this.pitch/30, 2/3);
+        await this.wait(500);
+        this.app.voicePool.play(this.pitch/30, 1/3);
     }
 };
