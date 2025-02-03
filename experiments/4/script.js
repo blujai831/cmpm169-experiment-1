@@ -68,10 +68,14 @@ Experiment4.Application = new class {
         this.waves = [];
         this.period = 8000;
         this.clock = 0;
+        this.timeMouseHeld = 0;
     }
     drawPreview() {
         this.graphics.fillStyle = "black";
         this.graphics.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    get cursorRadius() {
+        return 8 + this.timeMouseHeld/100;
     }
     draw() {
         this.graphics.fillStyle = "black";
@@ -82,12 +86,22 @@ Experiment4.Application = new class {
         }
         this.graphics.beginPath();
         this.graphics.ellipse(
-            this.mouse.x, this.mouse.y, 8, 8, 0, 0, 2*Math.PI
+            this.mouse.x, this.mouse.y,
+            this.cursorRadius, this.cursorRadius,
+            0, 0, 2*Math.PI
         );
         this.graphics.fill();
     }
     update(deltaTime) {
         this.cursorHue = (this.cursorHue + deltaTime/2)%360;
+        if (this.mouse.down) {
+            this.timeMouseHeld += deltaTime;
+        } else {
+            this.timeMouseHeld -= 4*deltaTime;
+            if (this.timeMouseHeld <= 0) {
+                this.timeMouseHeld = 0;
+            }
+        }
         for (const wave of this.waves) {
             wave.update(deltaTime);
         }
@@ -121,7 +135,7 @@ Experiment4.Voice = class {
     constructor(app) {
         this.app = app;
         const now = app.audio.currentTime;
-        this.oscillatorVolume = 0.1;
+        this.oscillatorVolume = 0.25;
         this.oscillators = [];
         this.gains = [];
         this.master = app.audio.createGain();
@@ -181,7 +195,14 @@ Experiment4.Wave = class {
         this.pitch = app.cursorHue;
         this.clock = app.period;
         this.rippleLifetime = 2000;
-        this.rippleMaxRadius = 160;
+        this.rippleMaxRadius = 20*app.cursorRadius;
+        this.volume = Experiment4.lerp(
+            1/4, 1,
+            Experiment4.clamp(
+                0, 1,
+                app.cursorRadius/16 - 1
+            )
+        );
         this.ripples = [];
         this.timers = [];
     }
@@ -235,17 +256,17 @@ Experiment4.Wave = class {
         }
     }
     async fire() {
-        this.app.voicePool.play(this.pitch/30);
+        this.app.voicePool.play(this.pitch/30, this.volume);
         this.ripple();
         await this.wait(250);
         this.ripple();
         await this.wait(250);
-        this.app.voicePool.play(this.pitch/30, 2/3);
+        this.app.voicePool.play(this.pitch/30, this.volume*2/3);
         this.ripple();
         await this.wait(250);
         this.ripple();
         await this.wait(250);
-        this.app.voicePool.play(this.pitch/30, 1/3);
+        this.app.voicePool.play(this.pitch/30, this.volume*1/3);
         this.ripple();
         await this.wait(250);
         this.ripple();
