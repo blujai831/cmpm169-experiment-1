@@ -14,41 +14,96 @@ Experiment4.Application = new class {
     constructor() {
         this.canvas = document.querySelector("canvas");
         this.graphics = this.canvas.getContext("2d");
-        this.canvas.addEventListener("click", this.start.bind(this));
+        this.drawPreview();
+        this.addEventListeners();
+    }
+    addEventListeners() {
+        this.mouse = {};
+        this.canvas.addEventListener("click", ev => {
+            this.mouse.down = false;
+            this.mouse.x = ev.offsetX;
+            this.mouse.y = ev.offsetY;
+            if (!this.running) {
+                this.start();
+            }
+        });
+        this.canvas.addEventListener("mousedown", ev => {
+            this.mouse.down = true;
+            this.mouse.x = ev.offsetX;
+            this.mouse.y = ev.offsetY;
+            if (this.running) {
+                this.onMouseDown();
+            }
+        });
+        this.canvas.addEventListener("mouseup", ev => {
+            this.mouse.down = false;
+            this.mouse.x = ev.offsetX;
+            this.mouse.y = ev.offsetY;
+            if (this.running) {
+                this.onMouseUp();
+            }
+        });
+        this.canvas.addEventListener("mousemove", ev => {
+            this.mouse.x = ev.offsetX;
+            this.mouse.y = ev.offsetY;
+        });
     }
     async start() {
         if (!this.running) {
             this.running = true;
-            this.setupAudio();
+            this.setup();
             let then = performance.now();
             while (this.running) {
-                this.update(performance.now() - then);
+                this.draw();
                 await new Promise(requestAnimationFrame);
+                this.update(performance.now() - then);
                 then = performance.now();
             }
         }
     }
-    setupAudio() {
+    setup() {
         this.audio = new AudioContext();
-        this.voicePool = new Experiment4.VoicePool(this.audio);
+        this.voicePool = new Experiment4.VoicePool(this);
+        this.cursorHue = 0;
+        this.waves = [];
+        this.period = 8000;
+        this.clock = 0;
     }
-    update() {
-        let self = this;
-        this.coro ||= (function* () {
-            for (let n = 0;; n--) {
-                self.voicePool.play(n);
-                for (let i = 0; i < 30; i++) yield;
-            }
-        })();
-        this.coro.next();
+    drawPreview() {
+        this.graphics.fillStyle = "black";
+        this.graphics.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    draw() {
+        this.graphics.fillStyle = "black";
+        this.graphics.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.graphics.fillStyle = `hsl(${this.cursorHue} 100% 50%)`;
+        for (const wave of this.waves) {
+            wave.draw();
+        }
+        this.graphics.beginPath();
+        this.graphics.ellipse(
+            this.mouse.x, this.mouse.y, 8, 8, 0, 0, 2*Math.PI
+        );
+        this.graphics.fill();
+    }
+    update(deltaTime) {
+        this.cursorHue = (this.cursorHue + deltaTime/2)%360;
+        for (const wave of this.waves) {
+            wave.update(deltaTime);
+        }
+        this.clock = (this.clock + deltaTime)%this.period;
+    }
+    onMouseDown() {}
+    onMouseUp() {
+        this.waves.push(new Experiment4.Wave(this));
     }
 };
 
 Experiment4.VoicePool = class {
-    constructor(ctx, count = 12) {
+    constructor(app, count = 12) {
         this.voices = [];
         for (; count > 0; count--) {
-            this.voices.push(new Experiment4.Voice(ctx));
+            this.voices.push(new Experiment4.Voice(app));
         }
     }
     play(note, volume = 1) {
@@ -63,20 +118,20 @@ Experiment4.VoicePool = class {
 }
 
 Experiment4.Voice = class {
-    constructor(ctx) {
-        const now = ctx.currentTime;
-        this.context = ctx;
+    constructor(app) {
+        this.app = app;
+        const now = app.audio.currentTime;
         this.oscillatorVolume = 0.1;
         this.oscillators = [];
         this.gains = [];
-        this.master = ctx.createGain();
+        this.master = app.audio.createGain();
         this.master.gain.value = 0;
-        this.master.connect(ctx.destination);
+        this.master.connect(app.audio.destination);
         for (let i = 0; i < 2; i++) {
-            const oscillator = ctx.createOscillator();
+            const oscillator = app.audio.createOscillator();
             oscillator.type = "sine";
             oscillator.frequency.setValueAtTime(220*(2**i), now + 0.01);
-            const gain = ctx.createGain();
+            const gain = app.audio.createGain();
             gain.gain.value = 0;
             this.oscillators.push(oscillator);
             this.gains.push(gain);
@@ -86,7 +141,7 @@ Experiment4.Voice = class {
         }
     }
     play(note, volume = 1) {
-        const now = this.context.currentTime;
+        const now = this.app.audio.currentTime;
         note = (note%12 + 12)%12;
         let flo, fhi, vlo, vhi;
         flo = 220*(2**(note/12));
@@ -97,11 +152,6 @@ Experiment4.Voice = class {
         vhi = Experiment4.clamp(
             0, 1, (note >= 6) ? 1 - (note - 6)/6 : 1 - note/6
         )*this.oscillatorVolume;
-        console.log(
-            note,
-            Math.round(10*vlo/this.oscillatorVolume)/10,
-            Math.round(10*vhi/this.oscillatorVolume)/10
-        );
         this.oscillators[0].frequency.cancelScheduledValues(now + 0.01);
         this.oscillators[0].frequency.setValueAtTime(flo, now + 0.0101);
         this.gains[0].gain.cancelScheduledValues(now + 0.01);
@@ -114,11 +164,30 @@ Experiment4.Voice = class {
         this.master.gain.setValueAtTime(0, now + 0.0101);
         this.master.gain.linearRampToValueAtTime(volume, now + 0.05);
         this.master.gain.linearRampToValueAtTime(0, now + 0.5);
-        if (this.context.state == "suspended") {
-            this.context.resume();
+        if (this.app.audio.state == "suspended") {
+            this.app.audio.resume();
         }
     }
     get playing() {
         return this.master.gain.value > 0.01;
+    }
+};
+
+Experiment4.Wave = class {
+    constructor(app) {
+        this.app = app;
+        this.pitch = app.cursorHue;
+        this.clock = this.app.period;
+    }
+    draw() {}
+    update(deltaTime) {
+        this.clock += deltaTime;
+        if (this.clock > this.app.period) {
+            this.clock %= this.app.period;
+            this.fire();
+        }
+    }
+    fire() {
+        this.app.voicePool.play(this.pitch/30);
     }
 };
