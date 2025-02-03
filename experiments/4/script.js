@@ -176,8 +176,12 @@ Experiment4.Voice = class {
 Experiment4.Wave = class {
     constructor(app) {
         this.app = app;
+        this.x = app.mouse.x;
+        this.y = app.mouse.y;
         this.pitch = app.cursorHue;
-        this.clock = this.app.period;
+        this.clock = app.period;
+        this.rippleLifetime = 2000;
+        this.rippleMaxRadius = 160;
         this.ripples = [];
         this.timers = [];
     }
@@ -192,7 +196,20 @@ Experiment4.Wave = class {
             }
         }));
     }
-    draw() {}
+    draw() {
+        for (const r of this.ripples) {
+            const life = Experiment4.clamp(0, 1, 1 - r/this.rippleLifetime);
+            const radius = Experiment4.lerp(0, this.rippleMaxRadius, 1 - life);
+            this.app.graphics.strokeStyle =
+                `hsl(${this.pitch} 100% 50% / ${Math.round(life*100)}%)`;
+            this.app.graphics.lineWidth = 4*life;
+            this.app.graphics.beginPath();
+            this.app.graphics.ellipse(
+                this.x, this.y, radius, radius, 0, 0, 2*Math.PI
+            );
+            this.app.graphics.stroke();
+        }
+    }
     update(deltaTime) {
         if (this.clock >= this.app.period) {
             this.clock %= this.app.period;
@@ -202,7 +219,14 @@ Experiment4.Wave = class {
         this.updateTimers(deltaTime);
         this.clock += deltaTime;
     }
-    updateRipples(deltaTime) {}
+    updateRipples(deltaTime) {
+        for (let i = this.ripples.length - 1; i >= 0; i--) {
+            this.ripples[i] += deltaTime;
+            if (this.ripples[i] >= this.rippleLifetime) {
+                this.ripples.splice(i, 1);
+            }
+        }
+    }
     updateTimers(deltaTime) {
         for (let i = this.timers.length - 1; i >= 0; i--) {
             if (this.timers[i](deltaTime)) {
@@ -212,9 +236,21 @@ Experiment4.Wave = class {
     }
     async fire() {
         this.app.voicePool.play(this.pitch/30);
-        await this.wait(500);
+        this.ripple();
+        await this.wait(250);
+        this.ripple();
+        await this.wait(250);
         this.app.voicePool.play(this.pitch/30, 2/3);
-        await this.wait(500);
+        this.ripple();
+        await this.wait(250);
+        this.ripple();
+        await this.wait(250);
         this.app.voicePool.play(this.pitch/30, 1/3);
+        this.ripple();
+        await this.wait(250);
+        this.ripple();
+    }
+    ripple() {
+        this.ripples.push(0);
     }
 };
