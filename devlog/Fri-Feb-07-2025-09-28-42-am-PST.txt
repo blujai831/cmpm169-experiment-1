@@ -1,0 +1,3 @@
+Fri, Feb 07 2025, 09:28:42am PST
+Refactor toggle-local-server.sh
+The code duplication was getting a bit out of hand.
