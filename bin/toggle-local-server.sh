@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd "$(dirname "$BASH_SOURCE")"
+cd "$(dirname "$BASH_SOURCE")/.."
 
 start-server() {
     local pid
