@@ -46,18 +46,18 @@ void main() {
         );
         // Apply each visible point light
         for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
-            if (pointLights.data[i].used != 0) {
+            if (pointLights.used[i] != 0) {
                 /* Check how different the normal is
                  * from the direction from the face to the point light */
-                vec3 displacement = pointLights.data[i].position - position;
+                vec3 displacement = pointLights.positions[i] - position;
                 lightAlignment =
                     (1.0 + dot(normal, normalize(displacement)))/2.0;
                 /* The more similar they are, the more light is reflected,
                  * but also, the farther away the point light is,
                  * the less light is reflected */
                 light = mix(
-                    light, pointLights.data[i].color.rgb,
-                    pointLights.data[i].color.a *
+                    light, pointLights.colors[i].rgb,
+                    pointLights.colors[i].a *
                         lightAlignment/(length(displacement) + 1.0)
                 );
             }

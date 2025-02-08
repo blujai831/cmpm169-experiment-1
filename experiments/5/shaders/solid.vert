@@ -8,14 +8,14 @@ out vec3 normal;
 out int used;
 
 void main() {
-    if (instances.data[gl_InstanceID].used != 0) {
+    if (instances.used[gl_InstanceID] != 0) {
         used = 1;
         vec4 position4 =
-            instances.data[gl_InstanceID].transform*vec4(localPosition, 1.0);
+            instances.transforms[gl_InstanceID]*vec4(localPosition, 1.0);
         gl_Position = camera*position4;
         position = position4.xyz/position4.w;
         vec4 normal4 =
-            instances.data[gl_InstanceID].normalMatrix*vec4(localNormal, 1.0);
+            instances.normalMatrices[gl_InstanceID]*vec4(localNormal, 1.0);
         normal = normalize(normal4.xyz/normal4.w);
     } else {
         used = 0;
