@@ -1,0 +1,3 @@
+Sat, Feb 08 2025, 12:42:28pm PST
+Remove redundant matrix calculation code in shaders
+I decided we're calculating the matrices in JS so we don't calculate the same matrices repeatedly for every vertex of any given instance. If WebGL2 supported geometry shaders, I would like to pass the 3D model as a uniform in the geometry shader and do instancing that way, and that way I could calculate the matrices in the geometry shader and just reuse them and thus still reap the benefits of calculating them on the GPU, but alas, WebGL2 does not support geometry shaders. Also, since I'm still fairly new to 3D graphics programming, I don't even know if what I just said actually makes any sense.

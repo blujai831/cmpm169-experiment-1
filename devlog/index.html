@@ -10,6 +10,7 @@
 <header><h1>Devlog</h1></header>
 <nav><ul id="table-of-contents">
     <li><a href="..">Back</a></li>
+    <li><a href="#Sat-Feb-08-2025-12-42-28-pm-PST">Sat, Feb 08 2025, 12:42:28pm PST&mdash;Remove redundant matrix calculation code in shaders</a></li>
     <li><a href="#Sat-Feb-08-2025-12-41-07-pm-PST">Sat, Feb 08 2025, 12:41:07pm PST&mdash;Add .kate-swp files to gitignore</a></li>
     <li><a href="#Sat-Feb-08-2025-12-24-50-pm-PST">Sat, Feb 08 2025, 12:24:50pm PST&mdash;Create page for experiment 5, in which I will be working with WebGL2. Upload unfinished code to produce evidence of process.</a></li>
     <li><a href="#Fri-Feb-07-2025-09-33-33-am-PST">Fri, Feb 07 2025, 09:33:33am PST&mdash;Fix toggle-local-server.sh creating log.local in bin directory</a></li>
@@ -92,6 +93,12 @@
     <li><a href="#Mon-Jan-13-2025-06-51-07-pm-PST">Mon, Jan 13 2025, 06:51:07pm PST&mdash;Create bin/commit.sh to automatically maintain devlog page</a></li>
 </ul></nav>
 <main><ul id="entries">
+<li id="Sat-Feb-08-2025-12-42-28-pm-PST">
+    <h2>Sat, Feb 08 2025, 12:42:28pm PST&mdash;Remove redundant matrix calculation code in shaders</h2>
+    <a href="Sat-Feb-08-2025-12-42-28-pm-PST.png"><img src="Sat-Feb-08-2025-12-42-28-pm-PST.png" alt="Remove redundant matrix calculation code in shaders" /></a>
+    <p>I decided we're calculating the matrices in JS so we don't calculate the same matrices repeatedly for every vertex of any given instance. If WebGL2 supported geometry shaders, I would like to pass the 3D model as a uniform in the geometry shader and do instancing that way, and that way I could calculate the matrices in the geometry shader and just reuse them and thus still reap the benefits of calculating them on the GPU, but alas, WebGL2 does not support geometry shaders. Also, since I'm still fairly new to 3D graphics programming, I don't even know if what I just said actually makes any sense.</p>
+    <p><a href="#table-of-contents">Back to top</a></p>
+</li>
 <li id="Sat-Feb-08-2025-12-41-07-pm-PST">
     <h2>Sat, Feb 08 2025, 12:41:07pm PST&mdash;Add .kate-swp files to gitignore</h2>
     <a href="Sat-Feb-08-2025-12-41-07-pm-PST.png"><img src="Sat-Feb-08-2025-12-41-07-pm-PST.png" alt="Add .kate-swp files to gitignore" /></a>
