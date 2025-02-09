@@ -272,10 +272,10 @@ E5.Vector3 = class {
         return new E5.Vector3(1, 0, 0);
     }
     static get forward() {
-        return new E5.Vector3(0, 0, 1);
+        return new E5.Vector3(0, 0, -1);
     }
     static get backward() {
-        return new E5.Vector3(0, 0, -1);
+        return new E5.Vector3(0, 0, 1);
     }
     static get zero() {
         return new E5.Vector3(0, 0, 0);
@@ -347,8 +347,8 @@ E5.Transform = class {
         this.updateMatrices();
     }
     get position() {return Object.freeze(this._position.clone());}
-    get rotation() {return Object.freeze(this._quaternion.clone());}
-    get scale() {return Object.freeze(this._scale.clone());}
+    get rotation() {return Object.freeze(this._rotation.clone());}
+    get size() {return Object.freeze(this._scale.clone());}
     set position(t) {
         this._position = E5.Vector3.clone(t);
         this.updateMatrices();
@@ -357,14 +357,14 @@ E5.Transform = class {
         this._rotation = E5.Quaternion.clone(q);
         this.updateMatrices();
     }
-    set scale(d) {
+    set size(d) {
         this._scale = E5.Vector3.clone(d);
         this.updateMatrices();
     }
     updateMatrices() {
         const t = this.position;
         const q = this.rotation;
-        const d = this.scale;
+        const d = this.size;
         // Simplified with xmaxima from makeTransformMatrixExpression
         this.matrix[0] = d.x*(1 - 2*q.y*q.y - 2*q.z*q.z);
         this.matrix[1] = d.x*(2*q.x*q.y + 2*q.z*q.w);
@@ -423,6 +423,15 @@ E5.Transform = class {
     }
     static get identity() {
         return new E5.Transform();
+    }
+    translate(v) {
+        this.position = this.position.add(v);
+    }
+    rotate(q) {
+        this.rotation = this.rotation.mul(q);
+    }
+    scale(v) {
+        this.scale = this.scale.scale(v);
     }
 };
 
@@ -515,7 +524,9 @@ E5.WebGL2Demo = function () {
             offsetForUniformModelViewMatrix
         };
     };
-    const drawScene = function (gl, program, programInfo, buffers) {
+    const drawScene = function (
+        gl, program, programInfo, buffers, transform
+    ) {
         gl.clearColor(0, 0, 0, 1);
         gl.clearDepth(1);
         gl.enable(gl.DEPTH_TEST);
@@ -537,8 +548,6 @@ E5.WebGL2Demo = function () {
                 0, 0, (zFar + zNear)*nf, -1,
                 0, 0, (2*zFar*zNear)*nf, 0
             ]);
-        console.log(perspective);
-        console.log(programInfo);
         gl.uniformMatrix4fv(
             programInfo.offsetForUniformProjectionMatrix,
             false,
@@ -547,12 +556,7 @@ E5.WebGL2Demo = function () {
         gl.uniformMatrix4fv(
             programInfo.offsetForUniformModelViewMatrix,
             false,
-            new Float32Array([
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, -6, 1
-            ])
+            transform.matrix
         );
         const offset = 0;
         const vertexCount = 4;
@@ -589,11 +593,33 @@ E5.WebGL2Demo = function () {
         const gl = canvas.getContext("webgl2");
         if (!gl) throw new Error("no gl");
         const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
-        drawScene(
-            gl, shaderProgram,
-            getProgramInfo(gl, shaderProgram),
-            initBuffers(gl)
-        );
+        const programInfo = getProgramInfo(gl, shaderProgram);
+        const buffers = initBuffers(gl);
+        let transform = new E5.Transform();
+        transform.translate(E5.Vector3.forward.mul(6));
+        let deltaTime = 0;
+        let then = performance.now();
+        (async () => {
+            for (;;) {
+                transform.rotate(
+                    E5.Quaternion.fromAngleAxis(
+                        deltaTime/1000,
+                        E5.Vector3.forward
+                    )
+                );
+                console.log(transform.matrix);
+                drawScene(
+                    gl, shaderProgram,
+                    programInfo,
+                    buffers,
+                    transform
+                );
+                await new Promise(requestAnimationFrame);
+                const now = performance.now();
+                deltaTime = now - then;
+                then = now;
+            }
+        })();
     };
     main();
 };
