@@ -1,7 +1,6 @@
 const DEBUG = true;
 
-const Experiment5 = {};
-const e5 = Experiment5;
+const E5 = {};
 
 if (DEBUG) {
 
@@ -10,11 +9,11 @@ if (DEBUG) {
     * which could then be simplified using the application xmaxima,
     * before finally using the simplified closed-form expressions inline
     * in place of runtime matrix-by-matrix multiplication. */
-    e5.makeMatrixMultiplicationExpression = function (a, b, ...rest) {
+    E5.makeMatrixMultiplicationExpression = function (a, b, ...rest) {
         if (rest.length > 0) {
-            return e5.makeMatrixMultiplicationExpression(
+            return E5.makeMatrixMultiplicationExpression(
                 a,
-                e5.makeMatrixMultiplicationExpression(
+                E5.makeMatrixMultiplicationExpression(
                     b, ...rest
                 )
             );
@@ -43,7 +42,7 @@ if (DEBUG) {
         }
     };
 
-    e5.makeQuaternionMatrixExpression = q => [
+    E5.makeQuaternionMatrixExpression = q => [
         /* Approach taken from
          * https://www.songho.ca/opengl/gl_quaternion.html */
         [`1 - 2*(${q}_2)^2 - 2*(${q}_3)^2`,
@@ -61,7 +60,7 @@ if (DEBUG) {
         [`0`, `0`, `0`, `1`]
     ];
 
-    e5.makeInverseQuaternionMatrixExpression = q => [
+    E5.makeInverseQuaternionMatrixExpression = q => [
         /* Calculated algebraically from above,
          * in combination with the fact
          * that a quaternion's rotational inverse is its conjugate */
@@ -80,56 +79,56 @@ if (DEBUG) {
         [`0`, `0`, `0`, `1`]
     ];
 
-    e5.makeDilationMatrixExpression = d => [
+    E5.makeDilationMatrixExpression = d => [
         [`(${d}_1)`, `0`, `0`, `0`],
         [`0`, `(${d}_2)`, `0`, `0`],
         [`0`, `0`, `(${d}_3)`, `0`],
         [`0`, `0`, `0`, `1`]
     ];
 
-    e5.makeInverseDilationMatrixExpression = d => [
+    E5.makeInverseDilationMatrixExpression = d => [
         [`1/(${d}_1)`, `0`, `0`, `0`],
         [`0`, `1/(${d}_2)`, `0`, `0`],
         [`0`, `0`, `1/(${d}_3)`, `0`],
         [`0`, `0`, `0`, `1`]
     ];
 
-    e5.makeTranslationMatrixExpression = t => [
+    E5.makeTranslationMatrixExpression = t => [
         [`1`, `0`, `0`, `0`],
         [`0`, `1`, `0`, `0`],
         [`0`, `0`, `1`, `0`],
         [`(${t}_1)`, `(${t}_2)`, `(${t}_3)`, `1`]
     ];
 
-    e5.makeInverseTranslationMatrixExpression = t => [
+    E5.makeInverseTranslationMatrixExpression = t => [
         [`1`, `0`, `0`, `0`],
         [`0`, `1`, `0`, `0`],
         [`0`, `0`, `1`, `0`],
         [`-(${t}_1)`, `-(${t}_2)`, `-(${t}_3)`, `1`]
     ];
 
-    e5.makeTransformMatrixExpression = (t, q, d) =>
-        e5.makeMatrixMultiplicationExpression(
-            e5.makeTranslationMatrixExpression(t),
-            e5.makeQuaternionMatrixExpression(q),
-            e5.makeDilationMatrixExpression(d)
+    E5.makeTransformMatrixExpression = (t, q, d) =>
+        E5.makeMatrixMultiplicationExpression(
+            E5.makeTranslationMatrixExpression(t),
+            E5.makeQuaternionMatrixExpression(q),
+            E5.makeDilationMatrixExpression(d)
         );
 
-    e5.makeNormalMatrixExpression = (t, q, d) => e5.transpose4x4(
-        e5.makeMatrixMultiplicationExpression(
-            e5.makeInverseDilationMatrixExpression(d),
-            e5.makeInverseQuaternionMatrixExpression(q),
-            e5.makeInverseTranslationMatrixExpression(t)
+    E5.makeNormalMatrixExpression = (t, q, d) => E5.transpose4x4(
+        E5.makeMatrixMultiplicationExpression(
+            E5.makeInverseDilationMatrixExpression(d),
+            E5.makeInverseQuaternionMatrixExpression(q),
+            E5.makeInverseTranslationMatrixExpression(t)
         )
     );
 
-    e5.makeCameraMatrixExpression = (t, q) =>
-        e5.makeMatrixMultiplicationExpression(
-            e5.makeTranslationMatrixExpression(t),
-            e5.makeQuaternionMatrixExpression(q)
+    E5.makeCameraMatrixExpression = (t, q) =>
+        E5.makeMatrixMultiplicationExpression(
+            E5.makeTranslationMatrixExpression(t),
+            E5.makeQuaternionMatrixExpression(q)
         );
 
-    e5.transpose4x4 = m =>
+    E5.transpose4x4 = m =>
         [[m[0][0], m[1][0], m[2][0], m[3][0]],
          [m[0][1], m[1][1], m[2][1], m[3][1]],
          [m[0][2], m[1][2], m[2][2], m[3][2]],
@@ -137,126 +136,156 @@ if (DEBUG) {
 
 }
 
-e5.Vector3 = class {
+E5.Vector3 = class {
     constructor(x, y, z) {
         this.x = x || 0;
         this.y = y || 0;
         this.z = z || 0;
     }
     static clone(v) {
-        return new e5.Vector3(v.x, v.y, v.z);
+        return new E5.Vector3(v.x, v.y, v.z);
     }
     clone() {
-        return e5.Vector3.clone(this);
+        return E5.Vector3.clone(this);
     }
     static length(v) {
         return Math.sqrt(v.dot(v));
     }
     get length() {
-        return e5.Vector3.length(this);
+        return E5.Vector3.length(this);
     }
     static normalize(v) {
         const m = v.length;
-        return new e5.Vector3(v.x/m, v.y/m, v.z/m);
+        return new E5.Vector3(v.x/m, v.y/m, v.z/m);
     }
     get normalized() {
-        return e5.Vector3.normalize(this);
+        return E5.Vector3.normalize(this);
     }
     static negative(v) {
-        return new e5.Vector3(-v.x, -v.y, -v.z);
+        return new E5.Vector3(-v.x, -v.y, -v.z);
     }
     get negative() {
-        return e5.Vector3.negative(this);
+        return E5.Vector3.negative(this);
     }
     static reciprocal(v) {
-        return new e5.Vector3(1/v.x, 1/v.y, 1/v.z);
+        return new E5.Vector3(1/v.x, 1/v.y, 1/v.z);
     }
     get reciprocal() {
-        return e5.Vector3.reciprocal(this);
+        return E5.Vector3.reciprocal(this);
     }
     static add(v, u, ...rest) {
         if (rest.length > 0) {
-            return e5.Vector3.add(e5.Vector3.add(v, u), ...rest);
+            return E5.Vector3.add(E5.Vector3.add(v, u), ...rest);
         } else {
-            return new e5.Vector3(v.x + u.x, v.y + u.y, v.z + u.z);
+            return new E5.Vector3(v.x + u.x, v.y + u.y, v.z + u.z);
         }
     }
     add(...args) {
-        return e5.Vector3.add(this, ...args);
+        return E5.Vector3.add(this, ...args);
     }
     static sub(v, u, ...rest) {
         if (rest.length > 0) {
-            return e5.Vector3.sub(e5.Vector3.sub(v, u), ...rest);
+            return E5.Vector3.sub(E5.Vector3.sub(v, u), ...rest);
         } else {
             return v.add(u.negative);
         }
     }
     sub(...args) {
-        return e5.Vector3.sub(this, ...args);
+        return E5.Vector3.sub(this, ...args);
     }
     static mul(n, ...rest) {
         if (rest.length <= 0) {
             return n;
         } else if (rest.length == 1) {
             const v = rest[0];
-            return new e5.Vector3(n*v.x, n*v.y, n*v.z);
+            return new E5.Vector3(n*v.x, n*v.y, n*v.z);
         } else {
-            return e5.Vector3.mul(n, e5.Vector3.mul(...rest));
+            return E5.Vector3.mul(n, E5.Vector3.mul(...rest));
         }
     }
     mul(...args) {
-        return e5.Vector3.mul(...args, this);
+        return E5.Vector3.mul(...args, this);
     }
     static dot(v, u) {
         return v.x*u.x + v.y*u.y + v.z*u.z;
     }
     dot(other) {
-        return e5.Vector3.dot(this, other);
+        return E5.Vector3.dot(this, other);
     }
     static cross(v, u) {
-        return new e5.Vector3(
+        return new E5.Vector3(
             v.y*u.z - v.z*u.y,
             v.z*u.x - v.x*u.z,
             v.x*u.y - v.y*u.x
         );
     }
     cross(other) {
-        return e5.Vector3.cross(this, other);
+        return E5.Vector3.cross(this, other);
     }
     static project(v, u) {
         u = u.normalized;
         return u.mul(v.dot(u));
     }
     project(other) {
-        return e5.Vector3.project(this, other);
+        return E5.Vector3.project(this, other);
     }
     static reject(v, u) {
         return v.sub(v.project(u));
     }
     reject(other) {
-        return e5.Vector3.reject(this, other);
+        return E5.Vector3.reject(this, other);
     }
     static rotate(v, q) {
         /* Approach borrowed from Sir Nate and Laurent Couvidou,
          * found at https://gamedev.stackexchange.com/questions/28395
          *      /rotating-vector3-by-a-quaternion */
-        const u = new e5.Vector3(q.x, q.y, q.z);
+        const u = new E5.Vector3(q.x, q.y, q.z);
         const dot = u.dot(v);
         const cross = u.cross(v);
         return u.mul(2*dot).add(v.mul(q.w*q.w - dot), cross.mul(2*q.w));
     }
     rotate(q) {
-        return e5.Vector3.rotate(this, q);
+        return E5.Vector3.rotate(this, q);
     }
     static scale(v, u) {
-        return new e5.Vector3(v.x*u.x, v.y*u.y, v.z*u.z);
+        return new E5.Vector3(v.x*u.x, v.y*u.y, v.z*u.z);
     }
     scale(other) {
-        return e5.Vector3.scale(this, other);
+        return E5.Vector3.scale(this, other);
+    }
+    static angle(v, u) {
+        return Math.acos(v.dot(u)/(v.length*u.length));
+    }
+    angle(other) {
+        return E5.Vector3.angle(this, other);
+    }
+    static get up() {
+        return new E5.Vector3(0, 1, 0);
+    }
+    static get down() {
+        return new E5.Vector3(0, -1, 0);
+    }
+    static get left() {
+        return new E5.Vector3(-1, 0, 0);
+    }
+    static get right() {
+        return new E5.Vector3(1, 0, 0);
+    }
+    static get forward() {
+        return new E5.Vector3(0, 0, 1);
+    }
+    static get backward() {
+        return new E5.Vector3(0, 0, -1);
+    }
+    static get zero() {
+        return new E5.Vector3(0, 0, 0);
+    }
+    static get one() {
+        return new E5.Vector3(1, 1, 1);
     }
 };
 
-e5.Quaternion = class {
+E5.Quaternion = class {
     constructor(x, y, z, w) {
         x ||= 0;
         y ||= 0;
@@ -270,9 +299,9 @@ e5.Quaternion = class {
     }
     static mul(q, p, ...rest) {
         if (rest.length > 0) {
-            return e5.Quaternion.mul(e5.Quaternion.mul(q, p), ...rest);
+            return E5.Quaternion.mul(E5.Quaternion.mul(q, p), ...rest);
         } else {
-            return new e5.Quaternion(
+            return new E5.Quaternion(
                 q.w*p.x + q.x*p.w + q.y*p.z - q.z*p.y,
                 q.w*p.y - q.x*p.z + q.y*p.w + q.z*p.x,
                 q.w*p.z + q.x*p.y - q.y*p.x + q.z*p.w,
@@ -281,21 +310,32 @@ e5.Quaternion = class {
         }
     }
     mul(...args) {
-        return e5.Quaternion.mul(this, ...args);
+        return E5.Quaternion.mul(this, ...args);
     }
     static inverse(q) {
-        return new e5.Quaternion(-q.x, -q.y, -q.z, q.w);
+        return new E5.Quaternion(-q.x, -q.y, -q.z, q.w);
     }
     get inverse() {
-        return e5.Quaternion.inverse(this);
+        return E5.Quaternion.inverse(this);
+    }
+    static fromAngleAxis(angle, axis) {
+        return new E5.Quaternion(
+            Math.sin(angle/2)*Math.cos(axis.angle(E5.Vector3.right)),
+            Math.sin(angle/2)*Math.cos(axis.angle(E5.Vector3.up)),
+            Math.sin(angle/2)*Math.cos(axis.angle(E5.Vector3.forward)),
+            Math.cos(angle/2)
+        );
+    }
+    static get identity() {
+        return new E5.Quaternion();
     }
 };
 
-e5.Transform = class {
+E5.Transform = class {
     constructor() {
-        this.position = new e5.Vector3();
-        this.rotation = new e5.Quaternion();
-        this.scale = new e5.Vector3(1, 1, 1);
+        this.position = new E5.Vector3();
+        this.rotation = new E5.Quaternion();
+        this.scale = new E5.Vector3(1, 1, 1);
     }
     get matrix() {
         // Simplified with xmaxima from makeTransformMatrixExpression
@@ -357,10 +397,29 @@ e5.Transform = class {
             rotate(this.rotation.inverse).
             scale(this.scale.reciprocal);
     }
+    static get identity() {
+        return new E5.Transform();
+    }
+};
+
+E5.WebGL2Demos = {};
+
+E5.WebGL2Demos["Getting started with WebGL"] = function () {
+    const main = function () {
+        const canvas = document.querySelector("canvas");
+        const gl = canvas.getContext("webgl2");
+        if (!gl) throw new Error("no gl");
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    };
+    main();
+};
+
+E5.start = function () {
+    E5.WebGL2Demos["Getting started with WebGL"]();
 };
 
 if (DEBUG) {
-    globalThis.Experiment5 = e5;
-} else {
-    e5.start();
+    globalThis.E5 = E5;
 }
+E5.start();
