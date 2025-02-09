@@ -439,16 +439,41 @@ E5.WebGL2Demos = {};
 
 E5.WebGL2Demo = function () {
     const initColorBuffer = function (gl) {
-        const colors = new Float32Array([
-            1, 1, 1, 1,
-            1, 0, 0, 1,
-            0, 1, 0, 1,
-            0, 0, 1, 1
-        ]);
+        const faceColors = [
+            [1.0, 1.0, 1.0, 1.0], // Front face: white
+            [1.0, 0.0, 0.0, 1.0], // Back face: red
+            [0.0, 1.0, 0.0, 1.0], // Top face: green
+            [0.0, 0.0, 1.0, 1.0], // Bottom face: blue
+            [1.0, 1.0, 0.0, 1.0], // Right face: yellow
+            [1.0, 0.0, 1.0, 1.0], // Left face: purple
+        ];
+        const colors = [];
+        for (var j = 0; j < faceColors.length; j++) {
+            const c = faceColors[j];
+            colors.splice(colors.length, 0, ...c, ...c, ...c, ...c);
+        }
         const colorBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
         return colorBuffer;
+    };
+    const initIndexBuffer = function (gl) {
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        const indices = [
+            0, 1, 2, 0, 2, 3, // front
+            4, 5, 6, 4, 6, 7, // back
+            8, 9, 10, 8, 10, 11, // top
+            12, 13, 14, 12, 14, 15, // bottom
+            16, 17, 18, 16, 18, 19, // right
+            20, 21, 22, 20, 22, 23, // left
+        ];
+        gl.bufferData(
+            gl.ELEMENT_ARRAY_BUFFER,
+            new Uint16Array(indices),
+            gl.STATIC_DRAW
+        );
+        return indexBuffer;
     };
     const vsSource = `#version 300 es
         precision highp float;
@@ -497,15 +522,25 @@ E5.WebGL2Demo = function () {
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-            1, 1,
-            -1, 1,
-            1, -1,
-            -1, -1
+            // Front face
+            -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+            // Back face
+            -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+            // Top face
+            -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0,
+            // Bottom face
+            -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
+            // Right face
+            1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0,
+            // Left face
+            -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
         ]), gl.STATIC_DRAW);
         const colorBuffer = initColorBuffer(gl);
+        const indexBuffer = initIndexBuffer(gl);
         return {
             position: positionBuffer,
-            color: colorBuffer
+            color: colorBuffer,
+            index: indexBuffer
         };
     };
     const getProgramInfo = function (gl, shaderProgram) {
@@ -538,6 +573,7 @@ E5.WebGL2Demo = function () {
         const zFar = 100.0;
         setPositionAttribute(gl, buffers, programInfo);
         setColorAttribute(gl, buffers, programInfo);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
         gl.useProgram(program);
         const f = 1/Math.tan(fov/2);
         const nf = 1/(zNear - zFar);
@@ -559,11 +595,12 @@ E5.WebGL2Demo = function () {
             transform.matrix
         );
         const offset = 0;
-        const vertexCount = 4;
-        gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+        const vertexCount = 36;
+        const type = gl.UNSIGNED_SHORT;
+        gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
     };
     const setPositionAttribute = function (gl, buffers, programInfo) {
-        const numComponents = 2;
+        const numComponents = 3;
         const type = gl.FLOAT;
         const normalize = false;
         const stride = 0;
@@ -596,7 +633,7 @@ E5.WebGL2Demo = function () {
         const programInfo = getProgramInfo(gl, shaderProgram);
         const buffers = initBuffers(gl);
         let transform = new E5.Transform();
-        transform.translate(E5.Vector3.forward.mul(6));
+        transform.translate(E5.Vector3.forward.mul(10));
         let deltaTime = 0;
         let then = performance.now();
         (async () => {
@@ -608,7 +645,6 @@ E5.WebGL2Demo = function () {
                     )
                 );
                 transform.scale(new E5.Vector3(1.0, 1.001, 1.0));
-                console.log(transform.matrix);
                 drawScene(
                     gl, shaderProgram,
                     programInfo,
