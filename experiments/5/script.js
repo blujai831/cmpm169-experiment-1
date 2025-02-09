@@ -435,27 +435,67 @@ E5.Transform = class {
     }
 };
 
-E5.WebGL2Demos = {};
-
 E5.WebGL2Demo = function () {
-    const initColorBuffer = function (gl) {
-        const faceColors = [
-            [1.0, 1.0, 1.0, 1.0], // Front face: white
-            [1.0, 0.0, 0.0, 1.0], // Back face: red
-            [0.0, 1.0, 0.0, 1.0], // Top face: green
-            [0.0, 0.0, 1.0, 1.0], // Bottom face: blue
-            [1.0, 1.0, 0.0, 1.0], // Right face: yellow
-            [1.0, 0.0, 1.0, 1.0], // Left face: purple
+    // Code adapted from
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial
+    const loadTexture = async function (gl, url) {
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const width = 1;
+        const height = 1;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixel = new Uint8Array([0, 0, 255, 255]);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            level,
+            internalFormat,
+            width, height,
+            border,
+            srcFormat, srcType,
+            pixel
+        );
+        const image = new Image();
+        image.src = url;
+        await new Promise(r => image.onload = r);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            level,
+            internalFormat,
+            srcFormat, srcType,
+            image
+        );
+        gl.generateMipmap(gl.TEXTURE_2D);
+        return texture;
+    };
+    const initTextureBuffer = function (gl) {
+        const textureCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+        const textureCoordinates = [
+            // Front
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            // Back
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            // Top
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            // Bottom
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            // Right
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            // Left
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
         ];
-        const colors = [];
-        for (var j = 0; j < faceColors.length; j++) {
-            const c = faceColors[j];
-            colors.splice(colors.length, 0, ...c, ...c, ...c, ...c);
-        }
-        const colorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-        return colorBuffer;
+        gl.bufferData(
+            gl.ARRAY_BUFFER,
+            new Float32Array(textureCoordinates),
+            gl.STATIC_DRAW,
+        );
+        return textureCoordBuffer;
     };
     const initIndexBuffer = function (gl) {
         const indexBuffer = gl.createBuffer();
@@ -478,21 +518,22 @@ E5.WebGL2Demo = function () {
     const vsSource = `#version 300 es
         precision highp float;
         in vec4 position;
-        in vec4 color;
+        in vec2 textureCoord;
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
-        out vec4 interpColor;
+        out vec2 interpTextureCoord;
         void main() {
             gl_Position = projectionMatrix*modelViewMatrix*position;
-            interpColor = color;
+            interpTextureCoord = textureCoord;
         }
     `;
     const fsSource = `#version 300 es
         precision highp float;
-        in vec4 interpColor;
+        in vec2 interpTextureCoord;
+        uniform sampler2D albedo;
         out vec4 finalColor;
         void main() {
-            finalColor = interpColor;
+            finalColor = texture(albedo, interpTextureCoord);
         }
     `;
     const loadShader = function (gl, type, source) {
@@ -535,32 +576,35 @@ E5.WebGL2Demo = function () {
             // Left face
             -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
         ]), gl.STATIC_DRAW);
-        const colorBuffer = initColorBuffer(gl);
+        const textureCoordBuffer = initTextureBuffer(gl);
         const indexBuffer = initIndexBuffer(gl);
         return {
             position: positionBuffer,
-            color: colorBuffer,
+            textureCoord: textureCoordBuffer,
             index: indexBuffer
         };
     };
     const getProgramInfo = function (gl, shaderProgram) {
         const offsetForAttributePosition =
             gl.getAttribLocation(shaderProgram, "position");
-        const offsetForAttributeColor =
-            gl.getAttribLocation(shaderProgram, "color");
+        const offsetForAttributeTextureCoord =
+            gl.getAttribLocation(shaderProgram, "textureCoord");
         const offsetForUniformProjectionMatrix =
             gl.getUniformLocation(shaderProgram, "projectionMatrix");
         const offsetForUniformModelViewMatrix =
             gl.getUniformLocation(shaderProgram, "modelViewMatrix");
+        const offsetForUniformAlbedo =
+            gl.getUniformLocation(shaderProgram, "albedo");
         return {
             offsetForAttributePosition,
-            offsetForAttributeColor,
+            offsetForAttributeTextureCoord,
             offsetForUniformProjectionMatrix,
-            offsetForUniformModelViewMatrix
+            offsetForUniformModelViewMatrix,
+            offsetForUniformAlbedo
         };
     };
     const drawScene = function (
-        gl, program, programInfo, buffers, transform
+        gl, program, programInfo, buffers, transform, texture
     ) {
         gl.clearColor(0, 0, 0, 1);
         gl.clearDepth(1);
@@ -572,7 +616,7 @@ E5.WebGL2Demo = function () {
         const zNear = 0.1;
         const zFar = 100.0;
         setPositionAttribute(gl, buffers, programInfo);
-        setColorAttribute(gl, buffers, programInfo);
+        setTextureAttribute(gl, buffers, programInfo);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
         gl.useProgram(program);
         const f = 1/Math.tan(fov/2);
@@ -594,6 +638,9 @@ E5.WebGL2Demo = function () {
             false,
             transform.matrix
         );
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(programInfo.offsetForUniformAlbedo, 0);
         const offset = 0;
         const vertexCount = 36;
         const type = gl.UNSIGNED_SHORT;
@@ -612,26 +659,27 @@ E5.WebGL2Demo = function () {
         );
         gl.enableVertexAttribArray(programInfo.offsetForAttributePosition);
     };
-    const setColorAttribute = function (gl, buffers, programInfo) {
-        const numComponents = 4;
+    const setTextureAttribute = function (gl, buffers, programInfo) {
+        const num = 2;
         const type = gl.FLOAT;
         const normalize = false;
         const stride = 0;
         const offset = 0;
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoord);
         gl.vertexAttribPointer(
-            programInfo.offsetForAttributeColor,
-            numComponents, type, normalize, stride, offset
+            programInfo.offsetForAttributeTextureCoord,
+            num, type, normalize, stride, offset
         );
-        gl.enableVertexAttribArray(programInfo.offsetForAttributeColor);
+        gl.enableVertexAttribArray(programInfo.offsetForAttributeTextureCoord);
     };
-    const main = function () {
+    const main = async function () {
         const canvas = document.querySelector("canvas");
         const gl = canvas.getContext("webgl2");
         if (!gl) throw new Error("no gl");
         const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
         const programInfo = getProgramInfo(gl, shaderProgram);
         const buffers = initBuffers(gl);
+        const texture = await loadTexture(gl, "images/metal-pipe-sfx.png");
         let transform = new E5.Transform();
         transform.translate(E5.Vector3.forward.mul(10));
         let deltaTime = 0;
@@ -644,12 +692,13 @@ E5.WebGL2Demo = function () {
                         E5.Vector3.one
                     )
                 );
-                transform.scale(new E5.Vector3(1.0, 1.001, 1.0));
+                transform.scale(new E5.Vector3(1.001, 1.0, 1.0));
                 drawScene(
                     gl, shaderProgram,
                     programInfo,
                     buffers,
-                    transform
+                    transform,
+                    texture
                 );
                 await new Promise(requestAnimationFrame);
                 const now = performance.now();
