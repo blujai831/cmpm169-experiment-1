@@ -411,7 +411,7 @@ E5.Transform = class {
     }
     localToWorld(vec) {
         return vec.
-            scale(this.scale).
+            scale(this.size).
             rotate(this.rotation).
             add(this.position);
     }
@@ -419,7 +419,7 @@ E5.Transform = class {
         return vec.
             sub(this.position).
             rotate(this.rotation.inverse).
-            scale(this.scale.reciprocal);
+            scale(this.size.reciprocal);
     }
     static get identity() {
         return new E5.Transform();
@@ -431,7 +431,7 @@ E5.Transform = class {
         this.rotation = this.rotation.mul(q);
     }
     scale(v) {
-        this.scale = this.scale.scale(v);
+        this.size = this.size.scale(v);
     }
 };
 
@@ -604,9 +604,10 @@ E5.WebGL2Demo = function () {
                 transform.rotate(
                     E5.Quaternion.fromAngleAxis(
                         deltaTime/1000,
-                        E5.Vector3.forward
+                        E5.Vector3.one
                     )
                 );
+                transform.scale(new E5.Vector3(1.0, 1.001, 1.0));
                 console.log(transform.matrix);
                 drawScene(
                     gl, shaderProgram,

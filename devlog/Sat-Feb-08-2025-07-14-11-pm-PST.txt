@@ -1,0 +1,3 @@
+Sat, Feb 08 2025, 07:14:11pm PST
+Test (and fix) other features of E5.Transform.
+I can now verify that E5.Transform at least *looks* like it's working perfectly on all accounts.
