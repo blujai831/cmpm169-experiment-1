@@ -438,6 +438,11 @@ E5.Transform = class {
 E5.WebGL2Demo = function () {
     // Code adapted from
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial
+    const loadText = async function (url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`response ${response.status}`);
+        return await response.text();
+    };
     const loadTexture = async function (gl, url) {
         const texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -515,7 +520,25 @@ E5.WebGL2Demo = function () {
         );
         return indexBuffer;
     };
-    const vsSource = `#version 300 es
+    const initNormalBuffer = function (gl) {
+        const normalBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+        const normals = [
+            0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, // front
+            0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, // back
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, // top
+            0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // bottom
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // right
+            -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, // left
+        ];
+        gl.bufferData(
+            gl.ARRAY_BUFFER,
+            new Float32Array(normals),
+            gl.STATIC_DRAW
+        );
+        return normalBuffer;
+    };
+    /*const vsSource = `#version 300 es
         precision highp float;
         in vec4 position;
         in vec2 textureCoord;
@@ -535,8 +558,12 @@ E5.WebGL2Demo = function () {
         void main() {
             finalColor = texture(albedo, interpTextureCoord);
         }
-    `;
-    const loadShader = function (gl, type, source) {
+    `;*/
+    const loadShader = async function (gl, type, ...urls) {
+        let source = "#version 300 es\nprecision highp float;\n\n";
+        for (const url of urls) {
+            source += await loadText(url) + "\n";
+        }
         const shader = gl.createShader(type);
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
@@ -547,9 +574,13 @@ E5.WebGL2Demo = function () {
         }
         return shader;
     };
-    const initShaderProgram = function (gl, vsSource, fsSource) {
-        const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
-        const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    const initShaderProgram = async function (gl) {
+        const vertexShader = await loadShader(
+            gl, gl.VERTEX_SHADER, "shaders/solid.simplified.vert"
+        );
+        const fragmentShader = await loadShader(
+            gl, gl.FRAGMENT_SHADER, "shaders/nipbr.simplified.frag"
+        );
         const shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
@@ -578,33 +609,36 @@ E5.WebGL2Demo = function () {
         ]), gl.STATIC_DRAW);
         const textureCoordBuffer = initTextureBuffer(gl);
         const indexBuffer = initIndexBuffer(gl);
+        const normalBuffer = initNormalBuffer(gl);
         return {
             position: positionBuffer,
             textureCoord: textureCoordBuffer,
-            index: indexBuffer
+            index: indexBuffer,
+            normal: normalBuffer
         };
     };
     const getProgramInfo = function (gl, shaderProgram) {
-        const offsetForAttributePosition =
-            gl.getAttribLocation(shaderProgram, "position");
-        const offsetForAttributeTextureCoord =
-            gl.getAttribLocation(shaderProgram, "textureCoord");
-        const offsetForUniformProjectionMatrix =
-            gl.getUniformLocation(shaderProgram, "projectionMatrix");
-        const offsetForUniformModelViewMatrix =
-            gl.getUniformLocation(shaderProgram, "modelViewMatrix");
-        const offsetForUniformAlbedo =
-            gl.getUniformLocation(shaderProgram, "albedo");
         return {
-            offsetForAttributePosition,
-            offsetForAttributeTextureCoord,
-            offsetForUniformProjectionMatrix,
-            offsetForUniformModelViewMatrix,
-            offsetForUniformAlbedo
+            vPosition: gl.getAttribLocation(shaderProgram, "vPosition"),
+            vNormal: gl.getAttribLocation(shaderProgram, "vNormal"),
+            vUV: gl.getAttribLocation(shaderProgram, "vUV"),
+            uTransform: gl.getUniformLocation(shaderProgram, "uTransform"),
+            uNormalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
+            uCamera: gl.getUniformLocation(shaderProgram, "uCamera"),
+            uAlbedo: gl.getUniformLocation(shaderProgram, "uAlbedo"),
+            uMetallicity: gl.getUniformLocation(shaderProgram, "uMetallicity"),
+            uRoughness: gl.getUniformLocation(shaderProgram, "uRoughness"),
+            uEmission: gl.getUniformLocation(shaderProgram, "uEmission"),
+            uLightDirection: gl.getUniformLocation(shaderProgram, "uLightDirection"),
+            uLightColor: gl.getUniformLocation(shaderProgram, "uLightColor")
         };
     };
     const drawScene = function (
-        gl, program, programInfo, buffers, transform, texture
+        gl, program, programInfo, buffers, transform,
+        albedoTexture,
+        metallicityTexture,
+        roughnessTexture,
+        emissionTexture
     ) {
         gl.clearColor(0, 0, 0, 1);
         gl.clearDepth(1);
@@ -617,6 +651,7 @@ E5.WebGL2Demo = function () {
         const zFar = 100.0;
         setPositionAttribute(gl, buffers, programInfo);
         setTextureAttribute(gl, buffers, programInfo);
+        setNormalAttribute(gl, buffers, programInfo);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
         gl.useProgram(program);
         const f = 1/Math.tan(fov/2);
@@ -629,18 +664,34 @@ E5.WebGL2Demo = function () {
                 0, 0, (2*zFar*zNear)*nf, 0
             ]);
         gl.uniformMatrix4fv(
-            programInfo.offsetForUniformProjectionMatrix,
+            programInfo.uCamera,
             false,
             perspective
         );
         gl.uniformMatrix4fv(
-            programInfo.offsetForUniformModelViewMatrix,
+            programInfo.uTransform,
             false,
             transform.matrix
         );
+        gl.uniformMatrix4fv(
+            programInfo.uNormalMatrix,
+            false,
+            transform.normalMatrix
+        );
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.uniform1i(programInfo.offsetForUniformAlbedo, 0);
+        gl.bindTexture(gl.TEXTURE_2D, albedoTexture);
+        gl.uniform1i(programInfo.uAlbedo, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, metallicityTexture);
+        gl.uniform1i(programInfo.uMetallicity, 1);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, roughnessTexture);
+        gl.uniform1i(programInfo.uRoughness, 2);
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, emissionTexture);
+        gl.uniform1i(programInfo.uEmission, 3);
+        gl.uniform3f(programInfo.uLightDirection, 1, -1, -0.5);
+        gl.uniform4f(programInfo.uLightColor, 1, 0.75, 0.875, 1);
         const offset = 0;
         const vertexCount = 36;
         const type = gl.UNSIGNED_SHORT;
@@ -654,10 +705,23 @@ E5.WebGL2Demo = function () {
         const offset = 0;
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
         gl.vertexAttribPointer(
-            programInfo.offsetForAttributePosition,
+            programInfo.vPosition,
             numComponents, type, normalize, stride, offset
         );
-        gl.enableVertexAttribArray(programInfo.offsetForAttributePosition);
+        gl.enableVertexAttribArray(programInfo.vPosition);
+    };
+    const setNormalAttribute = function (gl, buffers, programInfo) {
+        const numComponents = 3;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
+        gl.vertexAttribPointer(
+            programInfo.vNormal,
+            numComponents, type, normalize, stride, offset
+        );
+        gl.enableVertexAttribArray(programInfo.vNormal);
     };
     const setTextureAttribute = function (gl, buffers, programInfo) {
         const num = 2;
@@ -667,38 +731,63 @@ E5.WebGL2Demo = function () {
         const offset = 0;
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoord);
         gl.vertexAttribPointer(
-            programInfo.offsetForAttributeTextureCoord,
+            programInfo.vUV,
             num, type, normalize, stride, offset
         );
-        gl.enableVertexAttribArray(programInfo.offsetForAttributeTextureCoord);
+        gl.enableVertexAttribArray(programInfo.vUV);
+    };
+    const setupInputCallbacks = function (mouse, oldMouse) {
+        document.querySelector("canvas").addEventListener("mousemove", e => {
+            oldMouse.x = mouse.x;
+            oldMouse.y = mouse.y;
+            mouse.x = e.offsetX;
+            mouse.y = e.offsetY;
+        });
     };
     const main = async function () {
         const canvas = document.querySelector("canvas");
         const gl = canvas.getContext("webgl2");
         if (!gl) throw new Error("no gl");
-        const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+        const shaderProgram = await initShaderProgram(gl);
         const programInfo = getProgramInfo(gl, shaderProgram);
         const buffers = initBuffers(gl);
-        const texture = await loadTexture(gl, "images/metal-pipe-sfx.png");
+        const albedoTexture =
+            await loadTexture(gl, "images/metal-pipe-sfx.png");
+        const metallicityTexture =
+            await loadTexture(gl, "images/metal-pipe-sfx-metallicity-map.png");
+        const roughnessTexture =
+            await loadTexture(gl, "images/metal-pipe-sfx-roughness-map.png");
+        const emissionTexture =
+            await loadTexture(gl, "images/metal-pipe-sfx-emission-map.png");
         let transform = new E5.Transform();
         transform.translate(E5.Vector3.forward.mul(10));
         let deltaTime = 0;
+        const mouse = {x: 0, y: 0};
+        const oldMouse = {x: -1, y: -1};
+        const mouseDelta = () => ({x: mouse.x - oldMouse.x, y: mouse.y - oldMouse.y});
+        const mouseSpeed = () => {
+            const d = mouseDelta();
+            return Math.sqrt(d.x*d.x + d.y*d.y);
+        };
+        setupInputCallbacks(mouse, oldMouse);
         let then = performance.now();
         (async () => {
             for (;;) {
                 transform.rotate(
                     E5.Quaternion.fromAngleAxis(
-                        deltaTime/1000,
-                        E5.Vector3.one
+                        mouseSpeed()*deltaTime/1000,
+                        new E5.Vector3(mouseDelta().x, mouseDelta().y, 0)
                     )
                 );
-                transform.scale(new E5.Vector3(1.001, 1.0, 1.0));
                 drawScene(
                     gl, shaderProgram,
                     programInfo,
                     buffers,
                     transform,
-                    texture
+                    albedoTexture,
+                    metallicityTexture,
+                    roughnessTexture,
+                    emissionTexture
                 );
                 await new Promise(requestAnimationFrame);
                 const now = performance.now();
