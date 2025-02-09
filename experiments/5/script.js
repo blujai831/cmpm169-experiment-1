@@ -415,8 +415,193 @@ E5.WebGL2Demos["Getting started with WebGL"] = function () {
     main();
 };
 
+E5.WebGL2Demos["Adding 2D content to a WebGL context"] = function () {
+    const vsSource = `#version 300 es
+        precision highp float;
+        in vec4 position;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        out vec4 finalPosition;
+        void main() {
+            gl_Position = finalPosition = projectionMatrix*modelViewMatrix*position;
+        }
+    `;
+    const fsSource = `#version 300 es
+        precision highp float;
+        const float PI = 3.1415926535897932384626433832795028841971693994;
+        in vec4 finalPosition;
+        out vec4 color;
+        void main() {
+            // Let's do something a little differently from the tutorial
+            color = sin(PI*(finalPosition + vec4(1.0)))/2.0 + vec4(0.5);
+            color = vec4(1.0);
+        }
+    `;
+    const loadShader = function (gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const error = new Error(gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            throw error;
+        }
+        return shader;
+    };
+    const initShaderProgram = function (gl, vsSource, fsSource) {
+        const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        const shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            throw new Error(gl.getProgramInfoLog(shaderProgram));
+        }
+        return shaderProgram;
+    };
+    const initPositionBuffer = function (gl) {
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            1, 1,
+            -1, 1,
+            1, -1,
+            -1, -1
+        ]), gl.STATIC_DRAW);
+        return positionBuffer;
+    };
+    const getProgramInfo = function (gl, shaderProgram) {
+        const offsetForAttributePosition =
+            gl.getAttribLocation(shaderProgram, "position");
+        const offsetForUniformProjectionMatrix =
+            gl.getUniformLocation(shaderProgram, "projectionMatrix");
+        const offsetForUniformModelViewMatrix =
+            gl.getUniformLocation(shaderProgram, "modelViewMatrix");
+        const offsetForFragDataColor =
+            gl.getFragDataLocation(shaderProgram, "color");
+        /*console.log(
+            offsetForAttributePosition,
+            offsetForUniformProjectionMatrix,
+            offsetForUniformModelViewMatrix,
+            offsetForFragDataColor,
+            gl.getAttribLocation(shaderProgram, "thisShouldntWork"),
+            gl.getUniformLocation(shaderProgram, "thisShouldntWork"),
+            gl.getFragDataLocation(shaderProgram, "thisShouldntWork")
+        );*/
+        return {
+            offsetForAttributePosition,
+            offsetForUniformProjectionMatrix,
+            offsetForUniformModelViewMatrix,
+            offsetForFragDataColor
+        };
+    };
+    const drawScene = function (gl, program, programInfo, buffers) {
+        gl.clearColor(0, 0, 0, 1);
+        gl.clearDepth(1);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        const fov = Math.PI/4;
+        const aspect = gl.canvas.clientWidth/gl.canvas.clientHeight;
+        const zNear = 0.1;
+        const zFar = 100.0;
+        /*
+        const projectionMatrix = mat4.create(); // Huh!?!!?
+        // Well this just fucks everything up!
+        // I thought I'd have to pass in matrices manually!
+        // Now to find out how much code I'm going to have to throw away.
+        mat4.perspective(projectionMatrix, fov, aspect, zNear, zFar);
+        const modelViewMatrix = mat4.create();
+        mat4.translate( // Oh fuck you.
+            modelViewMatrix,
+            modelViewMatrix,
+            [-1, 0, 6]
+        );
+        */
+        /* Apparently the above code requires an outside library
+         * and MDN didn't think to tell anyone.
+         * (Oh, actually there's a footnote about it.)
+         * That's fine. As it happens, I have code to work with matrices,
+         * and actually I feel vindicated that I'm not going to have
+         * to get rid of it after all. I'll just adjust it
+         * to use Float32Array, since I'm looking at mat4's implementation
+         * and that is apparently what GL will expect.
+         * Later, though. For now, I'll just do the work inline here. */
+        setPositionAttribute(gl, buffers, programInfo);
+        gl.useProgram(program);
+        // Projection matrix formula taken from mat4 implementation.
+        const f = 1/Math.tan(fov/2);
+        const nf = 1/(zNear - zFar);
+        let perspective =
+            new Float32Array([
+                f/aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, (zFar + zNear)*nf, -1,
+                0, 0, (2*zFar*zNear)*nf, 0
+            ]);
+        /*perspective = new Float32Array([
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ])*/
+        console.log(perspective);
+        /* I've verified my perspective matrix is correct.
+         * It matches the one that would be produced by mat4.
+         * So why isn't it working? */
+        console.log(programInfo);
+        gl.uniformMatrix4fv(
+            programInfo.offsetForUniformProjectionMatrix,
+            false,
+            perspective
+        );
+        gl.uniformMatrix4fv(
+            programInfo.offsetForUniformModelViewMatrix,
+            false,
+            new Float32Array([
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, -6, 1
+                // It was because I was using 6 instead of -6.
+                // It was that simple.
+                // Unbelievable. What a waste of an hour.
+            ])
+        );
+        const offset = 0;
+        const vertexCount = 4;
+        gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+    };
+    const setPositionAttribute = function (gl, positionBuffer, programInfo) {
+        const numComponents = 2;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.vertexAttribPointer(
+            programInfo.offsetForAttributePosition,
+            numComponents, type, normalize, stride, offset
+        );
+        gl.enableVertexAttribArray(programInfo.offsetForAttributePosition);
+    };
+    const main = function () {
+        const canvas = document.querySelector("canvas");
+        const gl = canvas.getContext("webgl2");
+        if (!gl) throw new Error("no gl");
+        const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+        drawScene(
+            gl, shaderProgram,
+            getProgramInfo(gl, shaderProgram),
+            initPositionBuffer(gl)
+        );
+    };
+    main();
+};
+
 E5.start = function () {
-    E5.WebGL2Demos["Getting started with WebGL"]();
+    E5.WebGL2Demos["Adding 2D content to a WebGL context"]();
 };
 
 if (DEBUG) {
