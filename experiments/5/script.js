@@ -599,8 +599,180 @@ E5.WebGL2Demos["Adding 2D content to a WebGL context"] = function () {
     main();
 };
 
+E5.WebGL2Demos["Using shaders to apply color in WebGL"] = function () {
+    const initColorBuffer = function (gl) {
+        const colors = new Float32Array([
+            1, 1, 1, 1,
+            1, 0, 0, 1,
+            0, 1, 0, 1,
+            0, 0, 1, 1
+        ]);
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+        return colorBuffer;
+    };
+    const vsSource = `#version 300 es
+        precision highp float;
+        in vec4 position;
+        in vec4 color;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        out vec4 interpColor;
+        void main() {
+            gl_Position = projectionMatrix*modelViewMatrix*position;
+            interpColor = color;
+        }
+    `;
+    const fsSource = `#version 300 es
+        precision highp float;
+        in vec4 interpColor;
+        out vec4 finalColor;
+        void main() {
+            finalColor = interpColor;
+        }
+    `;
+    const loadShader = function (gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const error = new Error(gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            throw error;
+        }
+        return shader;
+    };
+    const initShaderProgram = function (gl, vsSource, fsSource) {
+        const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        const shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            throw new Error(gl.getProgramInfoLog(shaderProgram));
+        }
+        return shaderProgram;
+    };
+    const initBuffers = function (gl) {
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            1, 1,
+            -1, 1,
+            1, -1,
+            -1, -1
+        ]), gl.STATIC_DRAW);
+        const colorBuffer = initColorBuffer(gl);
+        return {
+            position: positionBuffer,
+            color: colorBuffer
+        };
+    };
+    const getProgramInfo = function (gl, shaderProgram) {
+        const offsetForAttributePosition =
+            gl.getAttribLocation(shaderProgram, "position");
+        const offsetForAttributeColor =
+            gl.getAttribLocation(shaderProgram, "color");
+        const offsetForUniformProjectionMatrix =
+            gl.getUniformLocation(shaderProgram, "projectionMatrix");
+        const offsetForUniformModelViewMatrix =
+            gl.getUniformLocation(shaderProgram, "modelViewMatrix");
+        return {
+            offsetForAttributePosition,
+            offsetForAttributeColor,
+            offsetForUniformProjectionMatrix,
+            offsetForUniformModelViewMatrix
+        };
+    };
+    const drawScene = function (gl, program, programInfo, buffers) {
+        gl.clearColor(0, 0, 0, 1);
+        gl.clearDepth(1);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        const fov = Math.PI/4;
+        const aspect = gl.canvas.clientWidth/gl.canvas.clientHeight;
+        const zNear = 0.1;
+        const zFar = 100.0;
+        setPositionAttribute(gl, buffers, programInfo);
+        setColorAttribute(gl, buffers, programInfo);
+        gl.useProgram(program);
+        const f = 1/Math.tan(fov/2);
+        const nf = 1/(zNear - zFar);
+        const perspective =
+            new Float32Array([
+                f/aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, (zFar + zNear)*nf, -1,
+                0, 0, (2*zFar*zNear)*nf, 0
+            ]);
+        console.log(perspective);
+        console.log(programInfo);
+        gl.uniformMatrix4fv(
+            programInfo.offsetForUniformProjectionMatrix,
+            false,
+            perspective
+        );
+        gl.uniformMatrix4fv(
+            programInfo.offsetForUniformModelViewMatrix,
+            false,
+            new Float32Array([
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, -6, 1
+            ])
+        );
+        const offset = 0;
+        const vertexCount = 4;
+        gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+    };
+    const setPositionAttribute = function (gl, buffers, programInfo) {
+        const numComponents = 2; // I never did figure out how this works.
+            // How does the shader know what the other two components
+            // are supposed to be?
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+        gl.vertexAttribPointer(
+            programInfo.offsetForAttributePosition,
+            numComponents, type, normalize, stride, offset
+        );
+        gl.enableVertexAttribArray(programInfo.offsetForAttributePosition);
+    };
+    const setColorAttribute = function (gl, buffers, programInfo) {
+        const numComponents = 4;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+        gl.vertexAttribPointer(
+            programInfo.offsetForAttributeColor,
+            numComponents, type, normalize, stride, offset
+        );
+        gl.enableVertexAttribArray(programInfo.offsetForAttributeColor);
+    };
+    const main = function () {
+        const canvas = document.querySelector("canvas");
+        const gl = canvas.getContext("webgl2");
+        if (!gl) throw new Error("no gl");
+        const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+        drawScene(
+            gl, shaderProgram,
+            getProgramInfo(gl, shaderProgram),
+            initBuffers(gl)
+        );
+    };
+    main();
+};
+
 E5.start = function () {
-    E5.WebGL2Demos["Adding 2D content to a WebGL context"]();
+    E5.WebGL2Demos["Using shaders to apply color in WebGL"]();
 };
 
 if (DEBUG) {

@@ -1,0 +1,3 @@
+Sat, Feb 08 2025, 06:37:40pm PST
+Complete third WebGL tutorial
+This one went much more smoothly, though I'm not a fan of the amount of code duplication necessary to keep record of my progress. I might start just having a single tutorial constant and building off of it each time instead of keeping them separate.
