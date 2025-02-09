@@ -15,6 +15,46 @@
 <main>
 <canvas width="320" height="240"></canvas>
 <p>To interact with the display, move your mouse over it.</p>
+<p>To the grader (whose name I omit for privacy):
+I realize the end result may not be up to par in terms of visual impact,
+but please consider what exactly is being showcased here.
+What you see here is a fully custom and original PBR shader
+rendering a cube via raw WebGL2, without relying on a higher-level framework,
+in a 3D space simulated by the beginnings of a custom 3D library,
+equipped with a class for vectors in R3 and a class for quaternions,
+as well as a higher-level class which makes use of the prior two
+to offer more general affine transform functionality,
+including generating matrices to pass to the vertex shader
+(without the use of a library such as mat4).
+In short, <em>I</em> did <em>everything</em> you see here.
+Well, not <em>everything.</em> I didn't write your internet browser
+nor its JavaScript engine, and I didn't build your graphics card
+nor flash its firmware, nor write the WebGL spec,
+nor the OpenGL spec more generally, nor the GLSL spec, etc.
+But I'm not using something like P5 or Three or anything like that.
+This is <em>all vanilla.</em> It took me all the time I had
+just to <em>learn how</em> to accomplish what you see here.</p>
+<p>The weird lighting artifacts are intentional.
+That happens because the cube's metallicity map is just a white background
+with "bar" written on it in huge black letters,
+and the cube's roughness map is just a black background
+with "foo" written on it in tiny white letters.
+These maps are included to demonstrate that my PBR shader is full-featured:
+the point is to show that it <em>supports</em> metallicity and roughness,
+even though how they're presented here is not really something
+that would naturally occur.</p>
+<p>This was the final missing piece. At this point, I finally know
+everything I would need to know to personally and individually write
+a whole 3D game engine from scratch. I probably won't do that,
+because it sounds very painful and the end result would probably suck,
+but at the very least there are no longer any knowledge barriers.</p>
+<p>My shader is nothing special. Actually I think it's kind of ugly.
+Even so, I worked hard on it and am proud of it. I'd like to showcase
+its actual code below:</p>
+<code><pre id="nipbr-source"></pre></code>
+<p>The exasperated woman pictured on the cube is the protagonist
+from Void Stranger, known variably as Lady Gray or Gray the Destroyer.
+I didn't draw the sprite but am using it anyway because it's funny to me.</p>
 </main>
 </body>
 </html>

@@ -795,6 +795,14 @@ E5.WebGL2Demo = function () {
                 then = now;
             }
         })();
+        const nipbrSource = document.querySelector("#nipbr-source");
+        nipbrSource.style = `
+            text-align: left;
+            width: fit-content;
+            margin: auto;
+        `;
+        nipbrSource.innerText =
+            await loadText("shaders/nipbr.simplified.frag");
     };
     main();
 };
