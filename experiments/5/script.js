@@ -434,7 +434,6 @@ E5.WebGL2Demos["Adding 2D content to a WebGL context"] = function () {
         void main() {
             // Let's do something a little differently from the tutorial
             color = sin(PI*(finalPosition + vec4(1.0)))/2.0 + vec4(0.5);
-            color = vec4(1.0);
         }
     `;
     const loadShader = function (gl, type, source) {
