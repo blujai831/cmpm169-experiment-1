@@ -1,0 +1,3 @@
+Mon, Feb 10 2025, 03:19:59pm PST
+Update description on experiment 5 page
+A past commit made the part where it's supposed to show my shader code stop working, so I fixed that. I also explained that the new wonky camera behavior is intentional and reflects me testing out my camera code.

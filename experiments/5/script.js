@@ -185,21 +185,26 @@ if (DEBUG_GL) {
 }
 
 E5.fetch = async function (url) {
-    if (E5.fetch.cache[url]) return E5.fetch.cache[url];
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
-    E5.fetch.cache[url] = response;
     return response;
 };
-E5.fetch.cache = {};
 
 E5.fetch.text = async function (url) {
-    return await (await E5.fetch(url)).text();
+    if (E5.fetch.text.cache[url]) return E5.fetch.text.cache[url];
+    const result = await (await E5.fetch(url)).text();
+    E5.fetch.text.cache[url] = result;
+    return result;
 };
+E5.fetch.text.cache = {};
 
 E5.fetch.json = async function (url) {
-    return await (await E5.fetch(url)).json();
+    if (E5.fetch.json.cache[url]) return E5.fetch.json.cache[url];
+    const result = await (await E5.fetch(url)).json();
+    E5.fetch.json.cache[url] = result;
+    return result;
 };
+E5.fetch.text.cache = {};
 
 E5.fetch.image = async function (url) {
     if (E5.fetch.image.cache[url]) return E5.fetch.image.cache[url];
@@ -1182,6 +1187,14 @@ E5.start = async function () {
             shaderProgram.draw();
         }
     });
+    const nipbrSourceElem = document.querySelector("#nipbr-source");
+    nipbrSourceElem.style = `
+        text-align: left;
+        width: fit-content;
+        margin: auto;
+    `;
+    nipbrSourceElem.innerText =
+        await E5.fetch.text("shaders/nipbr.simplified.frag");
 };
 
 if (DEBUG) {
