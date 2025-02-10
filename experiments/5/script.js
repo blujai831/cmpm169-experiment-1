@@ -987,7 +987,8 @@ E5.Coroutine = class {
             this._overallPromise = resumePromise;
             (async () => {
                 try {
-                    this._result = await this._overallPromise;
+                    await this._overallPromise;
+                    this._done = true;
                 } catch (error) {
                     this._error = error;
                 }
