@@ -1,0 +1,3 @@
+Mon, Feb 10 2025, 02:03:38pm PST
+Abstract away all raw GL calls in experiment 5
+I promised myself I wouldn't turn this into an actual game engine, but we might be headed in that direction.

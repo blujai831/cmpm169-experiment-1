@@ -1,14 +1,16 @@
 const DEBUG = true;
+const DEBUG_GL = false;
 
 const E5 = {};
 
 if (DEBUG) {
 
-    /* The engine doesn't actually use this function.
-    * I used it to generate closed forms for transform matrices,
+    /* The engine doesn't actually use any of these functions.
+    * I used them to generate closed forms for transform matrices,
     * which could then be simplified using the application xmaxima,
     * before finally using the simplified closed-form expressions inline
     * in place of runtime matrix-by-matrix multiplication. */
+
     E5.makeMatrixMultiplicationExpression = function (a, b, ...rest) {
         if (rest.length > 0) {
             return E5.makeMatrixMultiplicationExpression(
@@ -135,6 +137,75 @@ if (DEBUG) {
          [m[0][3], m[1][3], m[2][3], m[3][3]]];
 
 }
+
+/* All uses of WebGL2 API calls in this script will have been adapted from
+ * https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial */
+E5.canvas = document.querySelector("#e5-canvas");
+E5.gl = E5.canvas.getContext("webgl2");
+if (!E5.gl) throw new Error("Browser does not support WebGL2");
+if (DEBUG_GL) {
+    E5.gl = new Proxy(E5.gl, {
+        get(target, prop, receiver) {
+            if (typeof(target[prop]) == "function") {
+                return function (...args) {
+                    console.log(prop, ...args);
+                    const result = target[prop](...args);
+                    const err = target.getError();
+                    if (err == 0) {
+                        return result;
+                    } else {
+                        throw new Error(`GL error ${err}`);
+                    }
+                }
+            } else {
+                return target[prop];
+            }
+        }
+    });
+}
+
+E5.fetch = async function (url) {
+    if (E5.fetch.cache[url]) return E5.fetch.cache[url];
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+    E5.fetch.cache[url] = response;
+    return response;
+};
+E5.fetch.cache = {};
+
+E5.fetch.text = async function (url) {
+    return await (await E5.fetch(url)).text();
+};
+
+E5.fetch.json = async function (url) {
+    return await (await E5.fetch(url)).json();
+};
+
+E5.fetch.image = async function (url) {
+    if (E5.fetch.image.cache[url]) return E5.fetch.image.cache[url];
+    const image = new Image();
+    image.src = url;
+    await new Promise((resolve, reject) => {
+        image.addEventListener("load", resolve);
+        image.addEventListener("error", reject);
+    });
+    E5.fetch.image.cache[url] = image;
+    return image;
+};
+E5.fetch.image.cache = {};
+
+E5.fetch.audio = async function (url) {
+    if (E5.fetch.audio.cache[url]) return E5.fetch.audio.cache[url];
+    const audio = new Audio();
+    audio.src = url;
+    await new Promise((resolve, reject) => {
+        audio.addEventListener("load", resolve);
+        audio.addEventListener("error", reject);
+    });
+    E5.fetch.audio.cache[url] = audio;
+    return audio;
+};
+E5.fetch.audio.cache = {};
 
 E5.Vector3 = class {
     constructor(x, y, z) {
@@ -435,53 +506,461 @@ E5.Transform = class {
     }
 };
 
-E5.WebGL2Demo = function () {
-    // Code adapted from
-    // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial
-    const loadText = async function (url) {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`response ${response.status}`);
-        return await response.text();
-    };
-    const loadTexture = async function (gl, url) {
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        const level = 0;
-        const internalFormat = gl.RGBA;
-        const width = 1;
-        const height = 1;
-        const border = 0;
-        const srcFormat = gl.RGBA;
-        const srcType = gl.UNSIGNED_BYTE;
-        const pixel = new Uint8Array([0, 0, 255, 255]);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            level,
-            internalFormat,
-            width, height,
-            border,
-            srcFormat, srcType,
-            pixel
+E5.constructAsync = async (klass, asyncConstructor) => {
+    // We are about to commit some sins.
+    const self = Object.setPrototypeOf({}, klass.prototype);
+    await asyncConstructor.call(self);
+    return self;
+};
+
+E5.Texture = class {
+    constructor(url) {
+        if (E5.Texture.cache[url]) return E5.Texture.cache[url];
+        return E5.constructAsync(E5.Texture, async function () {
+            this.image = await E5.fetch.image(url);
+            const level = 0;
+            const internalFormat = E5.gl.RGBA;
+            const srcFormat = E5.gl.RGBA;
+            const srcType = E5.gl.UNSIGNED_BYTE;
+            this.glObject = E5.gl.createTexture();
+            E5.gl.bindTexture(E5.gl.TEXTURE_2D, this.glObject);
+            E5.gl.pixelStorei(E5.gl.UNPACK_FLIP_Y_WEBGL, true);
+            E5.gl.texImage2D(
+                E5.gl.TEXTURE_2D,
+                level,
+                internalFormat,
+                srcFormat,
+                srcType,
+                this.image
+            );
+            E5.gl.generateMipmap(E5.gl.TEXTURE_2D);
+            E5.Texture.cache[url] = this;
+        });
+    }
+    bindToIndex(i) {
+        E5.gl.activeTexture(E5.gl[`TEXTURE${i}`]);
+        E5.gl.bindTexture(E5.gl.TEXTURE_2D, this.glObject);
+    }
+    useForUniform(program, uniform, i) {
+        this.bindToIndex(i);
+        E5.gl.uniform1i(program.uniforms[uniform], i);
+    }
+};
+E5.Texture.cache = {};
+
+E5.ShaderBuffer = class {
+    constructor(bufferType, dataType, mode, data) {
+        if (bufferType == "elements") {
+            bufferType = "element_array";
+            data = mode;
+            mode = dataType;
+            dataType = "element";
+        }
+        bufferType = `${bufferType.toUpperCase()}_BUFFER`;
+        this.bufferType = E5.gl[bufferType];
+        this.glslType = dataType;
+        this.drawMode = E5.gl[`${mode.toUpperCase()}_DRAW`];
+        switch (dataType) {
+            case "int":
+                this.pitch = 1;
+                this.glType = E5.gl.INT;
+                this.jsArrayType = Int32Array;
+                break;
+            case "uint":
+                this.pitch = 1;
+                this.glType = E5.gl.UNSIGNED_INT;
+                this.jsArrayType = Uint32Array;
+                break;
+            case "float":
+                this.pitch = 1;
+                this.glType = E5.gl.FLOAT;
+                this.jsArrayType = Float32Array;
+                break;
+            case "ivec2":
+                this.pitch = 2;
+                this.glType = E5.gl.INT;
+                this.jsArrayType = Int32Array;
+                break;
+            case "ivec3":
+                this.pitch = 3;
+                this.glType = E5.gl.INT;
+                this.jsArrayType = Int32Array;
+                break;
+            case "ivec4":
+                this.pitch = 4;
+                this.glType = E5.gl.INT;
+                this.jsArrayType = Int32Array;
+                break;
+            case "uvec2":
+                this.pitch = 2;
+                this.glType = E5.gl.UNSIGNED_INT;
+                this.jsArrayType = Uint32Array;
+                break;
+            case "uvec3":
+                this.pitch = 3;
+                this.glType = E5.gl.UNSIGNED_INT;
+                this.jsArrayType = Uint32Array;
+                break;
+            case "uvec4":
+                this.pitch = 4;
+                this.glType = E5.gl.UNSIGNED_INT;
+                this.jsArrayType = Uint32Array;
+                break;
+            case "vec2":
+                this.pitch = 2;
+                this.glType = E5.gl.FLOAT;
+                this.jsArrayType = Float32Array;
+                break;
+            case "vec3":
+                this.pitch = 3;
+                this.glType = E5.gl.FLOAT;
+                this.jsArrayType = Float32Array;
+                break;
+            case "vec4":
+                this.pitch = 4;
+                this.glType = E5.gl.FLOAT;
+                this.jsArrayType = Float32Array;
+                break;
+            case "element":
+                this.jsArrayType = Uint16Array;
+                break;
+            default:
+                throw new Error(
+                    `Unsupported GLSL type for ShaderBuffer: ${dataType}`
+                );
+        }
+        this.glObject = E5.gl.createBuffer();
+        this.bind();
+        E5.gl.bufferData(
+            this.bufferType,
+            new (this.jsArrayType)(data),
+            this.drawMode
         );
-        const image = new Image();
-        image.src = url;
-        await new Promise(r => image.onload = r);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            level,
-            internalFormat,
-            srcFormat, srcType,
-            image
+        this.size = data.length;
+    }
+    update(offset, data) {
+        this.bind();
+        E5.gl.bufferSubData(
+            this.bufferType,
+            offset,
+            new (this.jsArrayType)(data)
         );
-        gl.generateMipmap(gl.TEXTURE_2D);
-        return texture;
-    };
-    const initTextureBuffer = function (gl) {
-        const textureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
-        const textureCoordinates = [
+    }
+    bind() {
+        E5.gl.bindBuffer(this.bufferType, this.glObject);
+    }
+    useForAttrib(
+        program, attrib,
+        normalize = false,
+        stride = 0,
+        offset = 0
+    ) {
+        this.bind();
+        E5.gl.vertexAttribPointer(
+            program.attribs[attrib],
+            this.pitch, this.glType,
+            normalize, stride, offset
+        );
+        E5.gl.enableVertexAttribArray(program.attribs[attrib]);
+    }
+};
+
+E5.ShaderProgram = class {
+    constructor(options) {
+        return E5.constructAsync(E5.ShaderProgram, async function () {
+            this.glObject = E5.ShaderProgram.Progs[
+                options.vertURL + " " + options.fragURL
+            ];
+            if (!this.glObject) {
+                let vert = E5.ShaderProgram.Verts[options.vertURL];
+                let frag = E5.ShaderProgram.Frags[options.fragURL];
+                if (!vert || !frag) {
+                    let commonSrc =
+                        "#version 300 es\nprecision highp float;\n\n";
+                    if (options.commonURLs) {
+                        for (const url of options.commonURLs) {
+                            commonSrc += await E5.fetch.text(url) + "\n";
+                        }
+                    }
+                    const vertSrc = commonSrc +
+                        await E5.fetch.text(options.vertURL);
+                    const fragSrc = commonSrc +
+                        await E5.fetch.text(options.fragURL);
+                    vert = E5.gl.createShader(E5.gl.VERTEX_SHADER);
+                    E5.gl.shaderSource(vert, vertSrc);
+                    E5.gl.compileShader(vert);
+                    if (!E5.gl.getShaderParameter(
+                        vert, E5.gl.COMPILE_STATUS
+                    )) {
+                        const error = new Error(E5.gl.getShaderInfoLog(vert));
+                        E5.gl.deleteShader(vert);
+                        throw error;
+                    }
+                    frag = E5.gl.createShader(E5.gl.FRAGMENT_SHADER);
+                    E5.gl.shaderSource(frag, fragSrc);
+                    E5.gl.compileShader(frag);
+                    if (!E5.gl.getShaderParameter(
+                        frag, E5.gl.COMPILE_STATUS
+                    )) {
+                        const error = new Error(E5.gl.getShaderInfoLog(frag));
+                        E5.gl.deleteShader(vert);
+                        E5.gl.deleteShader(frag);
+                        throw error;
+                    }
+                    E5.ShaderProgram.Verts[options.vertURL] = vert;
+                    E5.ShaderProgram.Frags[options.fragURL] = frag;
+                }
+                this.glObject = E5.gl.createProgram();
+                E5.gl.attachShader(this.glObject, vert);
+                E5.gl.attachShader(this.glObject, frag);
+                E5.gl.linkProgram(this.glObject);
+                if (!E5.gl.getProgramParameter(
+                    this.glObject, E5.gl.LINK_STATUS
+                )) {
+                    throw new Error(E5.gl.getProgramInfoLog(this.glObject));
+                }
+                E5.ShaderProgram.Progs[
+                    options.vertURL + " " + options.fragURL
+                ] = this.glObject;
+            }
+            this.attribs = {};
+            for (const attrib of options.attribs) {
+                this.attribs[attrib] =
+                    E5.gl.getAttribLocation(this.glObject, attrib);
+            }
+            this.uniforms = {};
+            for (const uniform of options.uniforms) {
+                this.uniforms[uniform] =
+                    E5.gl.getUniformLocation(this.glObject, uniform);
+            }
+            this.variableValues = {};
+        });
+    }
+    use() {
+        E5.gl.useProgram(this.glObject);
+        for (const key of Object.keys(this.variableValues)) {
+            const value = this.variableValues[key];
+            if (value.type == "elements") {
+                const buf = value.values[0];
+                this.use.elements.call(this, buf);
+                this.vertexCount = buf.size;
+            } else {
+                this.use[value.type].call(this, key, ...value.values);
+            }
+        }
+    }
+    useAttrib(attrib, buf, ...args) {
+        buf.useForAttrib(this, attrib, ...args);
+    }
+    useElements(buf) {
+        buf.bind();
+    }
+    useTexture(uniform, tex, ...args) {
+        tex.useForUniform(this, uniform, ...args);
+    }
+    useInt(uniform, i) {
+        E5.gl.uniform1i(this.uniforms[uniform], i);
+    }
+    useFloat(uniform, f) {
+        E5.gl.uniform1f(this.uniforms[uniform], f);
+    }
+    useIVec2(uniform, x, y) {
+        E5.gl.uniform2i(this.uniforms[uniform], x, y);
+    }
+    useIVec3(uniform, x, y, z) {
+        E5.gl.uniform3i(this.uniforms[uniform], x, y, z);
+    }
+    useIVec4(uniform, x, y, z, w) {
+        E5.gl.uniform4i(this.uniforms[uniform], x, y, z, w);
+    }
+    useVec2(uniform, x, y) {
+        E5.gl.uniform2f(this.uniforms[uniform], x, y);
+    }
+    useVec3(uniform, x, y, z) {
+        E5.gl.uniform3f(this.uniforms[uniform], x, y, z);
+    }
+    useVec4(uniform, x, y, z, w) {
+        E5.gl.uniform4f(this.uniforms[uniform], x, y, z, w);
+    }
+    useMat2(uniform, fs) {
+        E5.gl.uniformMatrix2fv(
+            this.uniforms[uniform],
+            false,
+            fs
+        );
+    }
+    useMat3(uniform, fs) {
+        E5.gl.uniformMatrix3fv(
+            this.uniforms[uniform],
+            false,
+            fs
+        );
+    }
+    useMat4(uniform, fs) {
+        E5.gl.uniformMatrix4fv(
+            this.uniforms[uniform],
+            false,
+            fs
+        );
+    }
+    set(name, type, ...args) {
+        if (name == "elements") {
+            const firstArg = type;
+            type = name;
+            args = [firstArg, ...args];
+        }
+        this.variableValues[name] = {
+            type: type,
+            values: args
+        };
+    }
+    draw() {
+        this.use();
+        E5.gl.drawElements(
+            E5.gl.TRIANGLES, this.vertexCount, E5.gl.UNSIGNED_SHORT, 0
+        );
+    }
+};
+E5.ShaderProgram.Progs = {};
+E5.ShaderProgram.Verts = {};
+E5.ShaderProgram.Frags = {};
+E5.ShaderProgram.prototype.use.attrib = E5.ShaderProgram.prototype.useAttrib;
+E5.ShaderProgram.prototype.use.elements =
+    E5.ShaderProgram.prototype.useElements;
+E5.ShaderProgram.prototype.use.texture = E5.ShaderProgram.prototype.useTexture;
+E5.ShaderProgram.prototype.use.int = E5.ShaderProgram.prototype.useInt;
+E5.ShaderProgram.prototype.use.float = E5.ShaderProgram.prototype.useFloat;
+E5.ShaderProgram.prototype.use.ivec2 = E5.ShaderProgram.prototype.useIVec2;
+E5.ShaderProgram.prototype.use.ivec3 = E5.ShaderProgram.prototype.useIVec3;
+E5.ShaderProgram.prototype.use.ivec4 = E5.ShaderProgram.prototype.useIVec4;
+E5.ShaderProgram.prototype.use.vec2 = E5.ShaderProgram.prototype.useVec2;
+E5.ShaderProgram.prototype.use.vec3 = E5.ShaderProgram.prototype.useVec3;
+E5.ShaderProgram.prototype.use.vec4 = E5.ShaderProgram.prototype.useVec4;
+E5.ShaderProgram.prototype.use.mat2 = E5.ShaderProgram.prototype.useMat2;
+E5.ShaderProgram.prototype.use.mat3 = E5.ShaderProgram.prototype.useMat3;
+E5.ShaderProgram.prototype.use.mat4 = E5.ShaderProgram.prototype.useMat4;
+
+E5.clearCanvas = function () {
+    E5.gl.clearColor(0, 0, 0, 1);
+    E5.gl.clearDepth(1);
+    E5.gl.enable(E5.gl.DEPTH_TEST);
+    E5.gl.depthFunc(E5.gl.LEQUAL);
+    E5.gl.clear(E5.gl.COLOR_BUFFER_BIT | E5.gl.DEPTH_BUFFER_BIT);
+};
+
+E5.Coroutine = class {
+    // This is my own stackful coroutine implementation.
+    // (Admittedly, async makes it easy.)
+    constructor(callback) {
+        this._resume = callback.bind(this);
+    }
+    async resume(...args) {
+        const resumeCallback = this._resume;
+        this._resume = null;
+        const yieldPromise = new Promise(r => this._yield = r);
+        const resumePromise = resumeCallback(...args);
+            // intentionally not awaited
+        if (!this._overallPromise) {
+            this._overallPromise = resumePromise;
+            (async () => {
+                try {
+                    this._result = await this._overallPromise;
+                } catch (error) {
+                    this._error = error;
+                }
+            })(); // intentionally not awaited
+        }
+        return await Promise.race([this._overallPromise, yieldPromise]);
+    }
+    async yield(...args) {
+        const yieldCallback = this._yield;
+        this._yield = null;
+        const resumePromise = new Promise(r => this._resume = r);
+        yieldCallback(...args);
+        return await resumePromise;
+    }
+    get status() {
+        if (this._error) {
+            return "error";
+        } else if (this._done) {
+            return "done";
+        } else if (this._resume) {
+            return "stopped";
+        } else if (this._yield) {
+            return "running";
+        } else {
+            return "internal error";
+        }
+    }
+    get result() {
+        return this._overallPromise;
+    }
+};
+
+E5.Scheduler = class {
+    constructor() {
+        this.jobs = [];
+        this.anyJobEverAdded = false;
+        (async () => {
+            while (this.jobs.length > 0 || !this.anyJobEverAdded) {
+                for (let i = this.jobs.length - 1; i >= 0; i--) {
+                    const job = this.jobs[i];
+                    switch (job.status) {
+                        case "stopped": {
+                            const now = performance.now();
+                            const deltaTime = now - job.timestamp;
+                            job.timestamp = now;
+                            job.resume(deltaTime);
+                                // intentionally not awaited
+                        } break;
+                        case "done": case "error": {
+                            this.jobs.splice(i, 1);
+                        } break;
+                    }
+                }
+                await new Promise(requestAnimationFrame);
+            }
+        })(); // intentionally not awaited
+    }
+    async schedule(callback) {
+        const job = new E5.Coroutine(callback);
+        job.timestamp = performance.now();
+        this.jobs.push(job);
+        this.anyJobEverAdded = true;
+        return await job.result;
+    }
+};
+
+E5.Input = new class {
+    constructor() {
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.mouseDeltaX = 0;
+        this.mouseDeltaY = 0;
+        E5.canvas.addEventListener("mousemove", ev => {
+            this.mouseDeltaX = ev.offsetX - this.mouseX;
+            this.mouseDeltaY = ev.offsetY - this.deltaY;
+            this.mouseX = ev.offsetX;
+            this.mouseY = ev.offsetY;
+        });
+    }
+    /* Much more needs to be done for this class long-term,
+     * but this is good enough for now. */
+};
+
+E5.start = async function () {
+    const shaderProgram = await new E5.ShaderProgram({
+        vertURL: "shaders/solid.simplified.vert",
+        fragURL: "shaders/nipbr.simplified.frag",
+        attribs: ["vPosition", "vNormal", "vUV"],
+        uniforms: [
+            "uTransform", "uNormalMatrix", "uCamera",
+            "uAlbedo", "uMetallicity", "uRoughness", "uEmission",
+            "uLightDirection", "uLightColor"
+        ]
+    });
+    shaderProgram.set("vUV", "attrib",
+        new E5.ShaderBuffer("array", "vec2", "static", [
             // Front
             0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
             // Back
@@ -494,106 +973,20 @@ E5.WebGL2Demo = function () {
             0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
             // Left
             0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-        ];
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            new Float32Array(textureCoordinates),
-            gl.STATIC_DRAW,
-        );
-        return textureCoordBuffer;
-    };
-    const initIndexBuffer = function (gl) {
-        const indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        const indices = [
-            0, 1, 2, 0, 2, 3, // front
-            4, 5, 6, 4, 6, 7, // back
-            8, 9, 10, 8, 10, 11, // top
-            12, 13, 14, 12, 14, 15, // bottom
-            16, 17, 18, 16, 18, 19, // right
-            20, 21, 22, 20, 22, 23, // left
-        ];
-        gl.bufferData(
-            gl.ELEMENT_ARRAY_BUFFER,
-            new Uint16Array(indices),
-            gl.STATIC_DRAW
-        );
-        return indexBuffer;
-    };
-    const initNormalBuffer = function (gl) {
-        const normalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-        const normals = [
+        ])
+    );
+    shaderProgram.set("vNormal", "attrib",
+        new E5.ShaderBuffer("array", "vec3", "static", [
             0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, // front
             0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, // back
             0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, // top
             0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // bottom
             1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // right
             -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, // left
-        ];
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            new Float32Array(normals),
-            gl.STATIC_DRAW
-        );
-        return normalBuffer;
-    };
-    /*const vsSource = `#version 300 es
-        precision highp float;
-        in vec4 position;
-        in vec2 textureCoord;
-        uniform mat4 modelViewMatrix;
-        uniform mat4 projectionMatrix;
-        out vec2 interpTextureCoord;
-        void main() {
-            gl_Position = projectionMatrix*modelViewMatrix*position;
-            interpTextureCoord = textureCoord;
-        }
-    `;
-    const fsSource = `#version 300 es
-        precision highp float;
-        in vec2 interpTextureCoord;
-        uniform sampler2D albedo;
-        out vec4 finalColor;
-        void main() {
-            finalColor = texture(albedo, interpTextureCoord);
-        }
-    `;*/
-    const loadShader = async function (gl, type, ...urls) {
-        let source = "#version 300 es\nprecision highp float;\n\n";
-        for (const url of urls) {
-            source += await loadText(url) + "\n";
-        }
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            const error = new Error(gl.getShaderInfoLog(shader));
-            gl.deleteShader(shader);
-            throw error;
-        }
-        return shader;
-    };
-    const initShaderProgram = async function (gl) {
-        const vertexShader = await loadShader(
-            gl, gl.VERTEX_SHADER, "shaders/solid.simplified.vert"
-        );
-        const fragmentShader = await loadShader(
-            gl, gl.FRAGMENT_SHADER, "shaders/nipbr.simplified.frag"
-        );
-        const shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            throw new Error(gl.getProgramInfoLog(shaderProgram));
-        }
-        return shaderProgram;
-    };
-    const initBuffers = function (gl) {
-        const positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        ])
+    );
+    shaderProgram.set("vPosition", "attrib",
+        new E5.ShaderBuffer("array", "vec3", "static", [
             // Front face
             -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
             // Back face
@@ -606,209 +999,79 @@ E5.WebGL2Demo = function () {
             1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0,
             // Left face
             -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
-        ]), gl.STATIC_DRAW);
-        const textureCoordBuffer = initTextureBuffer(gl);
-        const indexBuffer = initIndexBuffer(gl);
-        const normalBuffer = initNormalBuffer(gl);
-        return {
-            position: positionBuffer,
-            textureCoord: textureCoordBuffer,
-            index: indexBuffer,
-            normal: normalBuffer
-        };
-    };
-    const getProgramInfo = function (gl, shaderProgram) {
-        return {
-            vPosition: gl.getAttribLocation(shaderProgram, "vPosition"),
-            vNormal: gl.getAttribLocation(shaderProgram, "vNormal"),
-            vUV: gl.getAttribLocation(shaderProgram, "vUV"),
-            uTransform: gl.getUniformLocation(shaderProgram, "uTransform"),
-            uNormalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
-            uCamera: gl.getUniformLocation(shaderProgram, "uCamera"),
-            uAlbedo: gl.getUniformLocation(shaderProgram, "uAlbedo"),
-            uMetallicity: gl.getUniformLocation(shaderProgram, "uMetallicity"),
-            uRoughness: gl.getUniformLocation(shaderProgram, "uRoughness"),
-            uEmission: gl.getUniformLocation(shaderProgram, "uEmission"),
-            uLightDirection: gl.getUniformLocation(shaderProgram, "uLightDirection"),
-            uLightColor: gl.getUniformLocation(shaderProgram, "uLightColor")
-        };
-    };
-    const drawScene = function (
-        gl, program, programInfo, buffers, transform,
-        albedoTexture,
-        metallicityTexture,
-        roughnessTexture,
-        emissionTexture
-    ) {
-        gl.clearColor(0, 0, 0, 1);
-        gl.clearDepth(1);
-        gl.enable(gl.DEPTH_TEST);
-        gl.depthFunc(gl.LEQUAL);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        ])
+    );
+    shaderProgram.set("elements",
+        new E5.ShaderBuffer("elements", "static", [
+            0, 1, 2, 0, 2, 3, // front
+            4, 5, 6, 4, 6, 7, // back
+            8, 9, 10, 8, 10, 11, // top
+            12, 13, 14, 12, 14, 15, // bottom
+            16, 17, 18, 16, 18, 19, // right
+            20, 21, 22, 20, 22, 23, // left
+        ])
+    );
+    shaderProgram.set("uAlbedo", "texture",
+        await new E5.Texture("images/metal-pipe-sfx.png"),
+        0
+    );
+    shaderProgram.set("uMetallicity", "texture",
+        await new E5.Texture("images/metal-pipe-sfx-metallicity-map.png"),
+        1
+    );
+    shaderProgram.set("uRoughness", "texture",
+        await new E5.Texture("images/metal-pipe-sfx-roughness-map.png"),
+        2
+    );
+    shaderProgram.set("uEmission", "texture",
+        await new E5.Texture("images/metal-pipe-sfx-emission-map.png"),
+        3
+    );
+    shaderProgram.set("uLightDirection", "vec3", 1, -1, -0.5);
+    shaderProgram.set("uLightColor", "vec4", 1, 0.75, 0.875, 1);
+    const perspective = (() => {
         const fov = Math.PI/4;
-        const aspect = gl.canvas.clientWidth/gl.canvas.clientHeight;
+        const aspect = E5.canvas.width/E5.canvas.height;
         const zNear = 0.1;
         const zFar = 100.0;
-        setPositionAttribute(gl, buffers, programInfo);
-        setTextureAttribute(gl, buffers, programInfo);
-        setNormalAttribute(gl, buffers, programInfo);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
-        gl.useProgram(program);
         const f = 1/Math.tan(fov/2);
         const nf = 1/(zNear - zFar);
-        const perspective =
-            new Float32Array([
-                f/aspect, 0, 0, 0,
-                0, f, 0, 0,
-                0, 0, (zFar + zNear)*nf, -1,
-                0, 0, (2*zFar*zNear)*nf, 0
-            ]);
-        gl.uniformMatrix4fv(
-            programInfo.uCamera,
-            false,
-            perspective
-        );
-        gl.uniformMatrix4fv(
-            programInfo.uTransform,
-            false,
-            transform.matrix
-        );
-        gl.uniformMatrix4fv(
-            programInfo.uNormalMatrix,
-            false,
-            transform.normalMatrix
-        );
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, albedoTexture);
-        gl.uniform1i(programInfo.uAlbedo, 0);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, metallicityTexture);
-        gl.uniform1i(programInfo.uMetallicity, 1);
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, roughnessTexture);
-        gl.uniform1i(programInfo.uRoughness, 2);
-        gl.activeTexture(gl.TEXTURE3);
-        gl.bindTexture(gl.TEXTURE_2D, emissionTexture);
-        gl.uniform1i(programInfo.uEmission, 3);
-        gl.uniform3f(programInfo.uLightDirection, 1, -1, -0.5);
-        gl.uniform4f(programInfo.uLightColor, 1, 0.75, 0.875, 1);
-        const offset = 0;
-        const vertexCount = 36;
-        const type = gl.UNSIGNED_SHORT;
-        gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-    };
-    const setPositionAttribute = function (gl, buffers, programInfo) {
-        const numComponents = 3;
-        const type = gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-        gl.vertexAttribPointer(
-            programInfo.vPosition,
-            numComponents, type, normalize, stride, offset
-        );
-        gl.enableVertexAttribArray(programInfo.vPosition);
-    };
-    const setNormalAttribute = function (gl, buffers, programInfo) {
-        const numComponents = 3;
-        const type = gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
-        gl.vertexAttribPointer(
-            programInfo.vNormal,
-            numComponents, type, normalize, stride, offset
-        );
-        gl.enableVertexAttribArray(programInfo.vNormal);
-    };
-    const setTextureAttribute = function (gl, buffers, programInfo) {
-        const num = 2;
-        const type = gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoord);
-        gl.vertexAttribPointer(
-            programInfo.vUV,
-            num, type, normalize, stride, offset
-        );
-        gl.enableVertexAttribArray(programInfo.vUV);
-    };
-    const setupInputCallbacks = function (mouse, oldMouse) {
-        document.querySelector("canvas").addEventListener("mousemove", e => {
-            oldMouse.x = mouse.x;
-            oldMouse.y = mouse.y;
-            mouse.x = e.offsetX;
-            mouse.y = e.offsetY;
-        });
-    };
-    const main = async function () {
-        const canvas = document.querySelector("canvas");
-        const gl = canvas.getContext("webgl2");
-        if (!gl) throw new Error("no gl");
-        const shaderProgram = await initShaderProgram(gl);
-        const programInfo = getProgramInfo(gl, shaderProgram);
-        const buffers = initBuffers(gl);
-        const albedoTexture =
-            await loadTexture(gl, "images/metal-pipe-sfx.png");
-        const metallicityTexture =
-            await loadTexture(gl, "images/metal-pipe-sfx-metallicity-map.png");
-        const roughnessTexture =
-            await loadTexture(gl, "images/metal-pipe-sfx-roughness-map.png");
-        const emissionTexture =
-            await loadTexture(gl, "images/metal-pipe-sfx-emission-map.png");
-        let transform = new E5.Transform();
-        transform.translate(E5.Vector3.forward.mul(10));
-        let deltaTime = 0;
-        const mouse = {x: 0, y: 0};
-        const oldMouse = {x: -1, y: -1};
-        const mouseDelta = () => ({x: mouse.x - oldMouse.x, y: mouse.y - oldMouse.y});
-        const mouseSpeed = () => {
-            const d = mouseDelta();
-            return Math.sqrt(d.x*d.x + d.y*d.y);
-        };
-        setupInputCallbacks(mouse, oldMouse);
-        let then = performance.now();
-        (async () => {
-            for (;;) {
-                transform.rotate(
-                    E5.Quaternion.fromAngleAxis(
-                        mouseSpeed()*deltaTime/1000,
-                        new E5.Vector3(mouseDelta().x, mouseDelta().y, 0)
-                    )
-                );
-                drawScene(
-                    gl, shaderProgram,
-                    programInfo,
-                    buffers,
-                    transform,
-                    albedoTexture,
-                    metallicityTexture,
-                    roughnessTexture,
-                    emissionTexture
-                );
-                await new Promise(requestAnimationFrame);
-                const now = performance.now();
-                deltaTime = now - then;
-                then = now;
-            }
-        })();
-        const nipbrSource = document.querySelector("#nipbr-source");
-        nipbrSource.style = `
-            text-align: left;
-            width: fit-content;
-            margin: auto;
-        `;
-        nipbrSource.innerText =
-            await loadText("shaders/nipbr.simplified.frag");
-    };
-    main();
-};
-
-E5.start = function () {
-    E5.WebGL2Demo();
+        return new Float32Array([
+            f/aspect, 0, 0, 0,
+            0, f, 0, 0,
+            0, 0, (zFar + zNear)*nf, -1,
+            0, 0, 2*zFar*zNear*nf, 0
+        ])
+    })();
+    const transform = new E5.Transform();
+    transform.translate(E5.Vector3.forward.mul(10));
+    shaderProgram.set("uCamera", "mat4", perspective);
+    shaderProgram.set("uTransform", "mat4", transform.matrix);
+    shaderProgram.set("uNormalMatrix", "mat4", transform.normalMatrix);
+    const scheduler = new E5.Scheduler();
+    scheduler.schedule(async function (deltaTime) {
+        for (;; deltaTime = await this.yield()) {
+            transform.position = new E5.Vector3(
+                transform.position.z/2 -
+                    E5.Input.mouseX*transform.position.z/E5.canvas.width,
+                transform.position.z/2 -
+                    (E5.canvas.height - E5.Input.mouseY) *
+                    transform.position.z/E5.canvas.height,
+                transform.position.z
+            );
+            transform.rotate(
+                E5.Quaternion.fromAngleAxis(
+                    deltaTime/1000, (new E5.Vector3(
+                        transform.position.y,
+                        transform.position.z,
+                        transform.position.x
+                    )).normalized
+                )
+            );
+            E5.clearCanvas();
+            shaderProgram.draw();
+        }
+    });
 };
 
 if (DEBUG) {
