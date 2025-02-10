@@ -1,0 +1,3 @@
+Mon, Feb 10 2025, 03:01:23pm PST
+Implement camera class
+The camera class provides the view-projection matrix. We are using a model matrix and a view-projection matrix instead of a model-view matrix and a projection matrix because our lights are in world space.

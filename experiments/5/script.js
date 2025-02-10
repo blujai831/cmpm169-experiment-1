@@ -124,8 +124,28 @@ if (DEBUG) {
         )
     );
 
-    E5.makeCameraMatrixExpression = (t, q) =>
+    E5.makePerspectiveMatrixExpression = (n, f, v, a) => [
+        // const fov = Math.PI/4;
+        // const aspect = E5.canvas.width/E5.canvas.height;
+        // const zNear = 0.1;
+        // const zFar = 100.0;
+        // const f = 1/Math.tan(fov/2);
+        // const nf = 1/(zNear - zFar);
+        // return new Float32Array([
+        //     f/aspect, 0, 0, 0,
+        //     0, f, 0, 0,
+        //     0, 0, (zFar + zNear)*nf, -1,
+        //     0, 0, 2*zFar*zNear*nf, 0
+        // ])
+        [`1/(${a}*tan(${v}/2))`, `0`, `0`, `0`],
+        [`0`, `1/tan(${v}/2)`, `0`, `0`],
+        [`0`, `0`, `(${n} + ${f})/(${n} - ${f})`, `-1`],
+        [`0`, `0`, `2*${n}*${f}/(${n} - ${f})`, `0`]
+    ];
+
+    E5.makeCameraMatrixExpression = (t, q, n, f, v, a) =>
         E5.makeMatrixMultiplicationExpression(
+            E5.makePerspectiveMatrixExpression(n, f, v, a),
             E5.makeTranslationMatrixExpression(t),
             E5.makeQuaternionMatrixExpression(q)
         );
@@ -403,6 +423,30 @@ E5.Quaternion = class {
             Math.cos(angle/2)
         );
     }
+    static toAngleAxis(q) {
+        const denom = Math.sqrt(1 - q.w*q.w);
+        if (denom == 0) {
+            return {
+                angle: 0,
+                axis: E5.Vector3.zero
+            };
+        } else {
+            return {
+                angle: 2*Math.acos(q.w),
+                axis: new E5.Vector3(
+                    q.x/denom,
+                    q.y/denom,
+                    q.z/denom
+                )
+            };
+        }
+    }
+    toAngleAxis() {
+        return E5.Quaternion.toAngleAxis(this);
+    }
+    get angleAxis() {
+        return this.toAngleAxis();
+    }
     static get identity() {
         return new E5.Quaternion();
     }
@@ -499,10 +543,84 @@ E5.Transform = class {
         this.position = this.position.add(v);
     }
     rotate(q) {
-        this.rotation = this.rotation.mul(q);
+        this.rotation = q.mul(this.rotation);
     }
     scale(v) {
         this.size = this.size.scale(v);
+    }
+};
+
+E5.Camera = class {
+    constructor() {
+        this._position = new E5.Vector3();
+        this._rotation = new E5.Quaternion();
+        this._fov = Math.PI/4;
+        this._aspect = E5.canvas.width/E5.canvas.height;
+        this._near = 0.1;
+        this._far = 100;
+        this.matrix = new Float32Array(16);
+        this.updateMatrix();
+    }
+    get position() {return Object.freeze(this._position.clone());}
+    get rotation() {return Object.freeze(this._rotation.clone());}
+    get fov() {return this._fov;}
+    get aspect() {return this._aspect;}
+    get near() {return this._near;}
+    get far() {return this._far;}
+    set position(t) {
+        this._position = E5.Vector3.clone(t);
+        this.updateMatrix();
+    }
+    set rotation(q) {
+        this._rotation = E5.Quaternion.clone(q);
+        this.updateMatrix();
+    }
+    set fov(fov) {
+        this._fov = fov;
+        this.updateMatrix();
+    }
+    set aspect(aspect) {
+        this._aspect = aspect;
+        this.updateMatrix();
+    }
+    set near(near) {
+        this._near = near;
+        this.updateMatrix();
+    }
+    set far(far) {
+        this._far = far;
+        this.updateMatrix();
+    }
+    updateMatrix() {
+        const t = this.position.negative;
+        const q = this.rotation.inverse;
+        const v = this.fov;
+        const a = this.aspect;
+        const n = this.near;
+        const f = this.far;
+        // Simplified with xmaxima from makeCameraMatrixExpression
+        this.matrix[0] = (1 - 2*q.y*q.y - 2*q.z*q.z)/(a*Math.tan(v/2));
+        this.matrix[1] = (2*q.x*q.y + 2*q.z*q.w)/Math.tan(v/2);
+        this.matrix[2] = (n + f)*(2*q.x*q.z - 2*q.y*q.w)/(n - f);
+        this.matrix[3] = 2*q.y*q.w - 2*q.x*q.z;
+        this.matrix[4] = (2*q.x*q.y - 2*q.z*q.w)/(a*Math.tan(v/2));
+        this.matrix[5] = (1 - 2*q.x*q.x - 2*q.z*q.z)/Math.tan(v/2);
+        this.matrix[6] = (n + f)*(2*q.x*q.w + 2*q.y*q.z)/(n - f);
+        this.matrix[7] = -2*q.x*q.w - 2*q.y*q.z;
+        this.matrix[8] = (2*q.x*q.z + 2*q.y*q.w)/(a*Math.tan(v/2));
+        this.matrix[9] = (2*q.x*q.w - 2*q.y*q.z)/Math.tan(v/2);
+        this.matrix[10] = (n + f)*(1 - 2*q.x*q.x - 2*q.y*q.y)/(n - f);
+        this.matrix[11] = 2*q.x*q.x + 2*q.y*q.y - 1;
+        this.matrix[12] = t.x/(a*Math.tan(v/2));
+        this.matrix[13] = t.y/Math.tan(v/2);
+        this.matrix[14] = (2*n*f + (n + f)*t.z)/(n - f);
+        this.matrix[15] = -t.z;
+    }
+    translate(v) {
+        this.position = this.position.add(v);
+    }
+    rotate(q) {
+        this.rotation = q.mul(this.rotation);
     }
 };
 
@@ -931,7 +1049,7 @@ E5.Scheduler = class {
     }
 };
 
-E5.Input = new class {
+E5.Input = new class { // singleton
     constructor() {
         this.mouseX = 0;
         this.mouseY = 0;
@@ -1029,25 +1147,14 @@ E5.start = async function () {
     );
     shaderProgram.set("uLightDirection", "vec3", 1, -1, -0.5);
     shaderProgram.set("uLightColor", "vec4", 1, 0.75, 0.875, 1);
-    const perspective = (() => {
-        const fov = Math.PI/4;
-        const aspect = E5.canvas.width/E5.canvas.height;
-        const zNear = 0.1;
-        const zFar = 100.0;
-        const f = 1/Math.tan(fov/2);
-        const nf = 1/(zNear - zFar);
-        return new Float32Array([
-            f/aspect, 0, 0, 0,
-            0, f, 0, 0,
-            0, 0, (zFar + zNear)*nf, -1,
-            0, 0, 2*zFar*zNear*nf, 0
-        ])
-    })();
+    const camera = new E5.Camera();
     const transform = new E5.Transform();
-    transform.translate(E5.Vector3.forward.mul(10));
-    shaderProgram.set("uCamera", "mat4", perspective);
+    shaderProgram.set("uCamera", "mat4", camera.matrix);
     shaderProgram.set("uTransform", "mat4", transform.matrix);
     shaderProgram.set("uNormalMatrix", "mat4", transform.normalMatrix);
+    camera.rotate(E5.Quaternion.fromAngleAxis(Math.PI/8, E5.Vector3.right));
+    camera.translate(E5.Vector3.up.mul(3));
+    transform.translate(E5.Vector3.forward.mul(10));
     const scheduler = new E5.Scheduler();
     scheduler.schedule(async function (deltaTime) {
         for (;; deltaTime = await this.yield()) {
@@ -1062,12 +1169,15 @@ E5.start = async function () {
             transform.rotate(
                 E5.Quaternion.fromAngleAxis(
                     deltaTime/1000, (new E5.Vector3(
-                        transform.position.y,
-                        transform.position.z,
-                        transform.position.x
+                        -transform.position.y,
+                        transform.position.x,
+                        0
                     )).normalized
                 )
             );
+            camera.rotate(E5.Quaternion.fromAngleAxis(
+                deltaTime/1000, E5.Vector3.forward
+            ));
             E5.clearCanvas();
             shaderProgram.draw();
         }
