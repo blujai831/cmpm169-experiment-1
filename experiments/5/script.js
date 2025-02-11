@@ -1166,9 +1166,9 @@ E5.start = async function () {
     const scheduler = new E5.Scheduler();
     scheduler.schedule(async function (deltaTime) {
         for (;; deltaTime = await this.yield()) {
-            camera.rotate(E5.Quaternion.fromAngleAxis(
+            /*camera.rotate(E5.Quaternion.fromAngleAxis(
                 deltaTime/1000, E5.Vector3.forward
-            ));
+            ));*/
             E5.clearCanvas();
             for (const transform of [transform1, transform2, transform3]) {
                 transform.position = new E5.Vector3(
