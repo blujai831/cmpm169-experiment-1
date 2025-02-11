@@ -1154,38 +1154,44 @@ E5.start = async function () {
     shaderProgram.set("uLightDirection", "vec3", 1, -1, -0.5);
     shaderProgram.set("uLightColor", "vec4", 1, 0.75, 0.875, 1);
     const camera = new E5.Camera();
-    const transform = new E5.Transform();
+    const transform1 = new E5.Transform();
+    const transform2 = new E5.Transform();
+    const transform3 = new E5.Transform();
     shaderProgram.set("uCamera", "mat4", camera.matrix);
-    shaderProgram.set("uTransform", "mat4", transform.matrix);
-    shaderProgram.set("uNormalMatrix", "mat4", transform.normalMatrix);
     camera.rotate(E5.Quaternion.fromAngleAxis(Math.PI/8, E5.Vector3.right));
     camera.translate(E5.Vector3.up.mul(3));
-    transform.translate(E5.Vector3.forward.mul(10));
+    transform1.translate(E5.Vector3.forward.mul(10));
+    transform2.translate(E5.Vector3.forward.mul(20));
+    transform3.translate(E5.Vector3.forward.mul(30));
     const scheduler = new E5.Scheduler();
     scheduler.schedule(async function (deltaTime) {
         for (;; deltaTime = await this.yield()) {
-            transform.position = new E5.Vector3(
-                transform.position.z/2 -
-                    E5.Input.mouseX*transform.position.z/E5.canvas.width,
-                transform.position.z/2 -
-                    (E5.canvas.height - E5.Input.mouseY) *
-                    transform.position.z/E5.canvas.height,
-                transform.position.z
-            );
-            transform.rotate(
-                E5.Quaternion.fromAngleAxis(
-                    deltaTime/1000, (new E5.Vector3(
-                        -transform.position.y,
-                        transform.position.x,
-                        0
-                    )).normalized
-                )
-            );
             camera.rotate(E5.Quaternion.fromAngleAxis(
                 deltaTime/1000, E5.Vector3.forward
             ));
             E5.clearCanvas();
-            shaderProgram.draw();
+            for (const transform of [transform1, transform2, transform3]) {
+                transform.position = new E5.Vector3(
+                    transform.position.z/2 -
+                        E5.Input.mouseX*transform.position.z/E5.canvas.width,
+                    transform.position.z/2 -
+                        (E5.canvas.height - E5.Input.mouseY) *
+                        transform.position.z/E5.canvas.height,
+                    transform.position.z
+                );
+                transform.rotate(
+                    E5.Quaternion.fromAngleAxis(
+                        deltaTime/1000, (new E5.Vector3(
+                            -transform.position.y,
+                            transform.position.x,
+                            0
+                        )).normalized
+                    )
+                );
+                shaderProgram.set("uTransform", "mat4", transform.matrix);
+                shaderProgram.set("uNormalMatrix", "mat4", transform.normalMatrix);
+                shaderProgram.draw();
+            }
         }
     });
     const nipbrSourceElem = document.querySelector("#nipbr-source");
