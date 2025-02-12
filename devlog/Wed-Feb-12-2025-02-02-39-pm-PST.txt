@@ -1,0 +1,7 @@
+Wed, Feb 12 2025, 02:02:39pm PST
+Begin experiment 6 with a Markov chain implementation
+I'm not sure how I'll expand on this from here.
+
+Idea one: feed it my fanfiction.
+
+Idea two: add an interface for tuning the parameters
