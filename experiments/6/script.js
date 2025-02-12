@@ -69,7 +69,7 @@ class Markov {
     constructor() {
         this._associations = {};
         this._backtrackLimit = Infinity;
-        this.mode = "letters";
+        this.mode = "words";
     }
     setBacktrackLimit(n) {
         this._backtrackLimit = n;
@@ -113,13 +113,18 @@ class Markov {
             "$"
         ];
         let n = 0;
+        const start = tokens.indexOf("|");
+        let expected = 0;
+        for (let i = start; i < tokens.length; i++) {
+            for (let j = i - 1; j >= 0 && j >= i - this._backtrackLimit; j--) {
+                expected++;
+            }
+        }
         if (progressCoro) {
-            await progressCoro.yield(
-                Math.floor(tokens.length*(tokens.length - 1)/2)
-            );
+            await progressCoro.yield(expected);
             await progressCoro.yield(n);
         }
-        for (let i = 1; i < tokens.length; i++) {
+        for (let i = start; i < tokens.length; i++) {
             let from = [];
             let to = tokens[i];
             for (
