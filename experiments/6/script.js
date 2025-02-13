@@ -68,11 +68,27 @@ class Coroutine {
 class Markov {
     constructor() {
         this._associations = {};
-        this._backtrackLimit = Infinity;
+        this.backtrackLimit = Infinity;
         this.mode = "words";
     }
-    setBacktrackLimit(n) {
-        this._backtrackLimit = n;
+    reset() {
+        this._associations = {};
+    }
+    internAssociations(what) {
+        let parsed;
+        try {
+            this._associations = JSON.parse(what);
+        } catch (err) {
+            if (err instanceof SyntaxError) {
+                return false;
+            } else {
+                throw err;
+            }
+        }
+        return true;
+    }
+    externAssociations() {
+        return JSON.stringify(this._associations, null, 4);
     }
     learnSingle(from, to) {
         console.log(`learn association: ${from} => ${to}`);
@@ -113,10 +129,10 @@ class Markov {
             "$"
         ];
         let n = 0;
-        const start = tokens.indexOf("|");
+        const start = tokens.indexOf("|") + 1;
         let expected = 0;
         for (let i = start; i < tokens.length; i++) {
-            for (let j = i - 1; j >= 0 && j >= i - this._backtrackLimit; j--) {
+            for (let j = i - 1; j >= 0 && j >= i - this.backtrackLimit; j--) {
                 expected++;
             }
         }
@@ -129,7 +145,7 @@ class Markov {
             let to = tokens[i];
             for (
                 let j = i - 1;
-                j >= 0 && j >= i - this._backtrackLimit;
+                j >= 0 && j >= i - this.backtrackLimit;
                 j--
             ) {
                 from.splice(0, 0, tokens[j]);
@@ -142,7 +158,7 @@ class Markov {
         const tokens = ["^", ...this.tokenize(prompt), "|"];
         for (;;) {
             const maxLookbehind =
-                Math.min(this._backtrackLimit, tokens.length);
+                Math.min(this.backtrackLimit, tokens.length);
             let lookbehind =
                 Math.round((
                     Math.random()*(maxLookbehind - 1)
@@ -191,8 +207,11 @@ class Markov {
 
 const markov = new Markov();
 let busy = false;
+let errorState = false;
 const inputField = document.querySelector("input");
 const outputArea = document.querySelector("output");
+const brainArea = document.querySelector("#markov-brain");
+let lastKnownBrain;
 
 async function yieldToPage() {
     await new Promise(r => setTimeout(r, 0));
@@ -200,6 +219,11 @@ async function yieldToPage() {
 
 inputField.addEventListener("keydown", async (ev) => {
     if (ev.code == "Enter" && !busy) {
+        if (errorState) {
+            outputArea.innerText = "";
+            errorState = false;
+        }
+        brainArea.disabled = true;
         busy = true;
         const prompt = inputField.value;
         inputField.value = "";
@@ -208,23 +232,50 @@ inputField.addEventListener("keydown", async (ev) => {
             await this.yield("|||");
             await markov.respond(prompt, this);
         });
-        const learnSteps = await coro.resume();
-        for await (const value of coro) {
-            if (value == "|||") {
-                break;
-            } else {
-                outputArea.innerText =
-                    `Learning... ${Math.round(value*100/learnSteps)}%`;
+        try {
+            const learnSteps = await coro.resume();
+            for await (const value of coro) {
+                if (value == "|||") {
+                    break;
+                } else {
+                    outputArea.innerText =
+                        `Learning... ${Math.round(value*100/learnSteps)}%`;
+                    await yieldToPage();
+                }
+            }
+            outputArea.innerText = "";
+            let str = "";
+            for await (const value of coro) {
+                str = markov.detokenize([str, value]);
+                outputArea.innerText = str;
                 await yieldToPage();
             }
+            lastKnownBrain = brainArea.value = markov.externAssociations();
+        } catch (err) {
+            console.log(err);
+            outputArea.innerText = `
+                [Markov encountered an internal error.
+                This may result from model-incompatible changes
+                to its association table (its "brain").
+                See browser developer console for error details.]
+            `.split(/\s+/).filter(s => s != "").join(" ");
+            errorState = true;
+            markov.reset();
+            markov.internAssociations(brainArea.value);
+        } finally {
+            busy = false;
+            brainArea.disabled = false;
         }
-        outputArea.innerText = "";
-        let str = "";
-        for await (const value of coro) {
-            str = markov.detokenize([str, value]);
-            outputArea.innerText = str;
-            await yieldToPage();
-        }
-        busy = false;
+    }
+});
+
+brainArea.addEventListener("change", () => {
+    const text = (brainArea.value == "") ? "{}" : brainArea.value;
+    if (
+        !busy &&
+        text != lastKnownBrain &&
+        markov.internAssociations(text)
+    ) {
+        lastKnownBrain = text;
     }
 });

@@ -1,0 +1,3 @@
+Thu, Feb 13 2025, 01:30:04pm PST
+Add direct brain input and error handling
+This will allow users to import and export pretrained models. The error handling is in case they pass in something semantically invalid.
