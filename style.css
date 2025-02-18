@@ -97,3 +97,9 @@ section {
 .p5js-experiment {
     text-align: center;
 }
+
+ul {
+    width: fit-content;
+    margin: auto;
+    text-align: left;
+}

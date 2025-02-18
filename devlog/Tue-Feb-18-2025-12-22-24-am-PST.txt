@@ -1,0 +1,3 @@
+Tue, Feb 18 2025, 12:22:24am PST
+Add finer-grain controls, a model import/export system, and three pretrained models to mess around with
+The copypasta model is trained on copypasta. The AI rant model is trained on a rant I wrote about things I don't like about AI. The lyrics to Voided from Void Stranger model is trained on the lyrics to Voided from Void Stranger

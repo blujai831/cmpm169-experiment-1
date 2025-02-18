@@ -20,13 +20,58 @@ in involving myself with that particular technology.</p>
 and press Enter to talk to Markov. The longer you talk to it,
 the more it will learn from you, but ultimately it will always stay stupid.
 Just like an ANN.</p>
-<input type="text" />
+<input type="text" id="prompt" />
 <br />
-<output></output>
+<output id="response"></output>
 <br />
 <details>
-<summary>Markov's brain</summary>
-<textarea rows="16" cols="80" id="markov-brain"></textarea>
+<summary>Generation settings</summary>
+<label for="max-lookbehind">Max lookbehind (negative means infinite):</label>
+<br />
+<input type="number" id="max-lookbehind" value="-1" />
+<br />
+<label for="learning-mode-select">Learning mode:</label>
+<br />
+<select id="learning-mode-select">
+    <option value="conversational" selected>
+        Conversational
+        (learn prompt as response
+        to previous generated response)
+    </option>
+    <option value="instructive">
+        Instructive
+        (learn prompt as response
+        to previous prompt)
+    </option>
+    <option value="disabled">
+        Disabled
+        (only generate; do not learn)
+    </option>
+</select>
+<br />
+<label for="token-mode-select">Token mode:</label>
+<br />
+<select id="token-mode-select">
+    <option value="words" selected>Words</option>
+    <option value="letters">Letters</option>
+</select>
+</details>
+<details>
+<summary>Model import/export</summary>
+<button id="model-export">Export current model</button>
+<br />
+<label for="model-import">Or import a previously saved model:</label>
+<br />
+<input type="file" id="model-import" />
+<br />
+<p>Or import a model from the collection:</p>
+<ul id="collection-import-buttons">
+    <li><button id="collection-import-copypasta">Copypasta</button></li>
+    <li><button id="collection-import-ai-rant">AI rant</button></li>
+    <li><button
+        id="collection-import-voided"
+    >Lyrics to Voided from Void Stranger</button></li>
+</ul>
 </details>
 </main>
 </body>
