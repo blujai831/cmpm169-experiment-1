@@ -308,7 +308,7 @@ Markov.UI = class {
         }
     }
     setMaxLookbehindInUIFromModel() {
-        const n = this.markov.maxLookbehind;
+        const n = this.markov.backtrackLimit;
         if (isFinite(n)) {
             this.maxLookbehindField.value = String(n);
         } else {
@@ -318,9 +318,9 @@ Markov.UI = class {
     setMaxLookbehindInModelFromUI() {
         const n = Number(this.maxLookbehindField.value);
         if (n > 0) {
-            this.markov.maxLookbehind = n;
+            this.markov.backtrackLimit = n;
         } else {
-            this.markov.maxLookbehind = Infinity;
+            this.markov.backtrackLimit = Infinity;
         }
     }
     handleLearningModeSelectChange() {
@@ -424,7 +424,7 @@ Markov.UI = class {
             //lastResponse: this.responseArea.innerText,
             //learningMode: this.learningMode,
             tokenMode: this.markov.mode,
-            maxLookbehind: this.markov.maxLookbehind,
+            maxLookbehind: this.markov.backtrackLimit,
             associations: this.markov.associations
         });
     }
@@ -434,7 +434,7 @@ Markov.UI = class {
         //this.responseArea.innerText = obj.lastResponse;
         //this.learningMode = obj.learningMode;
         this.markov.mode = obj.tokenMode;
-        this.markov.maxLookbehind = obj.maxLookbehind;
+        this.markov.backtrackLimit = obj.maxLookbehind;
         this.markov.associations = obj.associations;
         this.responseArea.innerText = "";
         this.lastResponse = "";
@@ -465,6 +465,6 @@ Markov.UI = class {
     }
 };
 
-new (Markov.UI)();
+Markov.UI.Instance = new (Markov.UI)();
 
 window.Markov = Markov;
