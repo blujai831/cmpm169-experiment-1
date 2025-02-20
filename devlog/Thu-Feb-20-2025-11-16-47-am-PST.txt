@@ -1,0 +1,3 @@
+Thu, Feb 20 2025, 11:16:47am PST
+Fix crash on using an imported model that was exported before I fixed import/export of maxLookbehind
+Before it was fixed, maxLookbehind was neither getting exported nor imported. Now that it is fixed, the models exported before it was fixed still don't have a maxLookbehind set, but we now actually expect one, thus the crash. My fix is to set it to infinity if none is present.
