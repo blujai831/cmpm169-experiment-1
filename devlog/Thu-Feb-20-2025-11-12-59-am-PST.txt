@@ -1,0 +1,3 @@
+Thu, Feb 20 2025, 11:12:59am PST
+Add submit button for mobile usability
+Pressing enter on mobile doesn't do anything for some reason

@@ -244,6 +244,7 @@ Markov.UI = class {
         this.learningMode = "conversational";
         this.lastPrompt = "";
         this.promptField = document.querySelector("#prompt");
+        this.promptButton = document.querySelector("#submit-prompt-button");
         this.responseArea = document.querySelector("#response");
         this.maxLookbehindField = document.querySelector("#max-lookbehind");
         this.learningModeSelect =
@@ -259,6 +260,8 @@ Markov.UI = class {
     registerEventListeners() {
         this.promptField.addEventListener("keydown",
             this.handlePromptFieldKeydown.bind(this));
+        this.promptButton.addEventListener("click",
+            this.handlePromptButtonClick.bind(this));
         this.maxLookbehindField.addEventListener("change",
             this.handleMaxLookbehindFieldChange.bind(this));
         this.learningModeSelect.addEventListener("change",
@@ -276,6 +279,7 @@ Markov.UI = class {
     }
     disable() {
         this.promptField.disabled = true;
+        this.promptButton.disabled = true;
         this.maxLookbehindField.disabled = true;
         this.learningModeSelect.disabled = true;
         this.tokenModeSelect.disabled = true;
@@ -286,6 +290,7 @@ Markov.UI = class {
     enable() {
         this.busy = false;
         this.promptField.disabled = false;
+        this.promptButton.disabled = false;
         this.maxLookbehindField.disabled = false;
         this.learningModeSelect.disabled = false;
         this.tokenModeSelect.disabled = false;
@@ -299,6 +304,9 @@ Markov.UI = class {
         if (ev.code == "Enter") {
             this.respond();
         }
+    }
+    handlePromptButtonClick() {
+        this.respond();
     }
     handleMaxLookbehindFieldChange() {
         if (this.busy) {
