@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="p5js-experiment">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,7 +12,62 @@
     <h1>Experiment 7</h1>
     <nav><a href="../..">Back</a></nav>
 </header>
+<hr />
 <main>
+<input type="text" id="prompt" />
+<button id="submit-prompt-button">Submit</button>
+<br />
+<output id="response"></output>
+<br />
+<details>
+<summary>Generation settings</summary>
+<label for="max-lookbehind">Max lookbehind (negative means infinite):</label>
+<br />
+<input type="number" id="max-lookbehind" value="-1" />
+<br />
+<label for="learning-mode-select">Learning mode:</label>
+<br />
+<select id="learning-mode-select">
+    <option value="conversational" selected>
+        Conversational
+        (learn prompt as response
+        to previous generated response)
+    </option>
+    <option value="instructive">
+        Instructive
+        (learn prompt as response
+        to previous prompt)
+    </option>
+    <option value="disabled">
+        Disabled
+        (only generate; do not learn)
+    </option>
+</select>
+<br />
+<label for="token-mode-select">Token mode:</label>
+<br />
+<select id="token-mode-select">
+    <option value="words" selected>Words</option>
+    <option value="letters">Letters</option>
+</select>
+</details>
+<details>
+<summary>Model import/export</summary>
+<button id="model-export">Export current model</button>
+<br />
+<label for="model-import">Or import a previously saved model:</label>
+<br />
+<input type="file" id="model-import" />
+<br />
+<p>Or import a model from the collection:</p>
+<ul id="collection-import-buttons">
+    <li><button id="collection-import-copypasta">Copypasta</button></li>
+    <li><button id="collection-import-ai-rant">AI rant</button></li>
+    <li><button
+        id="collection-import-voided"
+    >Lyrics to Voided from Void Stranger</button></li>
+</ul>
+</details>
 </main>
 </body>
 </html>

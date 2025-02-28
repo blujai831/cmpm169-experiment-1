@@ -1,0 +1,3 @@
+Fri, Feb 28 2025, 02:42:59pm PST
+I had an idea, so this experiment is now going to start as a copy of experiment 6.
+My idea is to use the Markov model as the dataset I visualize. Generating responses is of course already a visualization of this dataset, but I have something more comprehensive and visually interesting in mind.
