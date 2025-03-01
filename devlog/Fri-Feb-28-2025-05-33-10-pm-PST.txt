@@ -1,0 +1,3 @@
+Fri, Feb 28 2025, 05:33:10pm PST
+Update dev log because I forgot with last commit (last commit was 'implement Markov associations visualizer')
+The visualizer visualizes continuations of a given token path. It displays the final token of the current token path in the center, and the possible continuations radially around it. More likely continuations are brighter, and less likely continuations are dimmer.
