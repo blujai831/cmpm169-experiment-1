@@ -557,10 +557,22 @@ Markov.Visualizer = class {
         if (assocs) {
             for (const to of Object.keys(assocs)) {
                 this.addButton(to, () => {
-                    this.visualize([
-                        ...path,
-                        to
-                    ]);
+                    if (to == "$") {
+                        path = [...path];
+                        while (path.includes("|")) {
+                            path.splice(0, 1);
+                        }
+                        this.visualize([
+                            "^",
+                            ...path,
+                            "|"
+                        ]);
+                    } else {
+                        this.visualize([
+                            ...path,
+                            to
+                        ]);
+                    }
                 });
             }
         } else {

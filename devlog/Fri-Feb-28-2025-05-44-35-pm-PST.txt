@@ -1,0 +1,3 @@
+Fri, Feb 28 2025, 05:44:35pm PST
+Alter behavior of selecting end-of-response token in visualizer so that instead of injecting the token, it moves the assembled response into the prompt position
+This way, it's possible to indirectly construct prompts directly through the visualizer, as well as visualize what the model looks like if it tries to respond to itself.
