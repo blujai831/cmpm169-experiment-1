@@ -254,6 +254,7 @@ Markov.UI = class {
         this.importButton = document.querySelector("#model-import");
         this.collectionImportButtons =
             document.querySelectorAll("#collection-import-buttons button");
+        this.visualizer = new (Markov.Visualizer)(this.markov);
         this.registerEventListeners();
         this.syncModelFromUI();
     }
@@ -285,10 +286,12 @@ Markov.UI = class {
         this.tokenModeSelect.disabled = true;
         this.exportButton.disabled = true;
         this.importButton.disabled = true;
+        this.visualizer.disableInput();
         this.busy = true;
     }
     enable() {
         this.busy = false;
+        this.visualizer.enableInput();
         this.promptField.disabled = false;
         this.promptButton.disabled = false;
         this.maxLookbehindField.disabled = false;
@@ -375,6 +378,7 @@ Markov.UI = class {
                 )
             );
             this.enable();
+            this.visualizer.visualize(["|"]);
             this.promptField.focus();
         }
     }
@@ -423,6 +427,17 @@ Markov.UI = class {
             }
             this.lastPrompt = prompt;
             this.enable();
+            if (prompt == "") {
+                this.visualizer.visualize(["|"]);
+            } else {
+                const visPath = ["^", ...this.markov.tokenize(prompt), "|"];
+                while (visPath.length > 0 && !this.markov.associations[
+                    this.markov.detokenize(visPath)
+                ]) {
+                    visPath.splice(0, 1);
+                }
+                this.visualizer.visualize(visPath);
+            }
             this.promptField.focus();
         }
     }
@@ -458,6 +473,7 @@ Markov.UI = class {
                 )
             );
             this.enable();
+            this.visualizer.visualize(["|"]);
             this.promptField.focus();
         }
     }
@@ -470,6 +486,121 @@ Markov.UI = class {
         this.setMaxLookbehindInModelFromUI();
         this.setLearningModeInModelFromUI();
         this.setTokenModeInModelFromUI();
+    }
+};
+
+Markov.Visualizer = class {
+    constructor(markov) {
+        this.markov = markov;
+        this.buttons = [];
+        this.pathText = document.querySelector("#visualizer-path");
+        this.canvas = document.querySelector("#visualizer-canvas");
+        this.graphics = this.canvas.getContext("2d");
+        this.buttonList = document.querySelector("#visualizer-controls");
+        this.visualize(["|"]);
+    }
+    visualize(path) {
+        this.graphics.fillStyle = "black";
+        this.graphics.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        const from = this.markov.detokenize(path);
+        this.pathText.innerText = `Visualizing token path: ${from}`;
+        this.graphics.font = "bold 16px serif";
+        this.graphics.textAlign = "center";
+        this.graphics.textBaseline = "middle";
+        const centerX = this.canvas.width/2;
+        const centerY = this.canvas.height/2;
+        const maxW = this.canvas.width/4;
+        const dist = Math.min(this.canvas.width, this.canvas.height)/3;
+        this.graphics.fillStyle = "white";
+        this.graphics.fillText(path[path.length - 1], centerX, centerY, maxW);
+        const assocs = this.markov.associations[from];
+        if (assocs) {
+            const tos = Object.keys(assocs);
+            let highest = 0;
+            for (const to of tos) {
+                if (assocs[to] > highest) {
+                    highest = assocs[to];
+                }
+            }
+            let i = 0;
+            for (const to of tos) {
+                const theta = 2*Math.PI*i/tos.length;
+                const brightness = Math.round(255*assocs[to]/highest);
+                this.graphics.fillStyle =
+                    `rgb(${brightness} ${brightness} ${brightness})`;
+                this.graphics.fillText(
+                    to,
+                    centerX + dist*Math.cos(theta),
+                    centerY + dist*Math.sin(theta),
+                    maxW
+                );
+                i++;
+            }
+        }
+        this.clearButtonList();
+        if (path.length > 0) {
+            if (path[path.length - 1] != "|") {
+                this.addButton("Backtrack (remove rightmost token)", () => {
+                    path = [...path];
+                    path.length--;
+                    this.visualize(path);
+                });
+            }
+            if (path[0] != "|") {
+                this.addButton("Generalize (remove leftmost token)", () => {
+                    path = [...path];
+                    path.splice(0, 1);
+                    this.visualize(path);
+                });
+            }
+        }
+        if (assocs) {
+            for (const to of Object.keys(assocs)) {
+                this.addButton(to, () => {
+                    this.visualize([
+                        ...path,
+                        to
+                    ]);
+                });
+            }
+        } else {
+            this.addTextToButtonList(`
+                (The model does not know any continuations
+                for the current token path.)
+            `);
+        }
+    }
+    clearButtonList() {
+        this.buttons.length = 0;
+        this.buttonList.innerHTML = "";
+    }
+    addButton(text, clickHandler) {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.innerHTML = text;
+        button.addEventListener("click", clickHandler);
+        this.buttons.push(button);
+        li.appendChild(button);
+        this.buttonList.appendChild(li);
+        return button;
+    }
+    addTextToButtonList(text) {
+        const li = document.createElement("li");
+        const p = document.createElement("p");
+        p.innerHTML = text;
+        li.appendChild(p);
+        this.buttonList.appendChild(li);
+        return p;
+    }
+    enableInput() {
+        for (const button of this.buttons) {
+            button.disabled = true;
+        }
+    }
+    disableInput() {
+        for (const button of this.buttons) {
+            button.disabled = false;
+        }
     }
 };
 

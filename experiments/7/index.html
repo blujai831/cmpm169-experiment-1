@@ -12,8 +12,15 @@
     <h1>Experiment 7</h1>
     <nav><a href="../..">Back</a></nav>
 </header>
-<hr />
 <main>
+<p>This is an extension of <a href="../6">experiment 6</a>. In that experiment,
+you could talk to "Markov," a proto-AI model (specifically, what is known
+as a <a href="https://en.wikipedia.org/wiki/Markov_chain">Markov chain</a>),
+and, optionally, it would learn from your conversation as you went.
+In this follow-up experiment, you can also directly navigate
+the model's working corpus with the data visualizer provided at the bottom.</p>
+<h2>Model interaction</h2>
+<label for="prompt">Prompt:</label>
 <input type="text" id="prompt" />
 <button id="submit-prompt-button">Submit</button>
 <br />
@@ -68,6 +75,16 @@
     >Lyrics to Voided from Void Stranger</button></li>
 </ul>
 </details>
+<h2>Visualizer</h2>
+<p id="visualizer-path"></p>
+<canvas id="visualizer-canvas" width=512 height=512></canvas>
+<p>Click on one of the following buttons
+to navigate to the possible continuations if that token is chosen:</p>
+<ul id="visualizer-controls"></ul>
+<p>Alternatively, enter any prompt at the top of the page
+to navigate the visualizer to the possible responses to that prompt.
+(An empty prompt is an exception: it will navigate the visualizer
+to the set of tokens that are possible responses to any prompt.)</p>
 </main>
 </body>
 </html>
